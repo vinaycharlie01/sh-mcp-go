@@ -95,7 +95,7 @@ func (s *Service) InstallChart(ctx context.Context, cmd InstallChartCommand) (*I
 		Wait:        cmd.Wait,
 		Atomic:      cmd.Atomic,
 		CreateNS:    cmd.CreateNS,
-		Timeout: cmd.TimeoutSecs,
+		Timeout:     cmd.TimeoutSecs,
 	})
 	if err != nil {
 		_ = agg.MarkFailed(err.Error())
@@ -173,7 +173,7 @@ func (s *Service) UpgradeChart(ctx context.Context, cmd UpgradeChartCommand) (*U
 		ReuseValues: cmd.ReuseValues,
 		ResetValues: cmd.ResetValues,
 		Force:       cmd.Force,
-		Timeout: cmd.TimeoutSecs,
+		Timeout:     cmd.TimeoutSecs,
 	})
 	if err != nil {
 		_ = agg.MarkFailed(err.Error())
@@ -234,7 +234,7 @@ func (s *Service) RollbackChart(ctx context.Context, cmd RollbackChartCommand) e
 		Version:     cmd.Version,
 		DryRun:      cmd.DryRun,
 		Wait:        cmd.Wait,
-		Timeout: cmd.TimeoutSecs,
+		Timeout:     cmd.TimeoutSecs,
 	}); err != nil {
 		_ = agg.MarkFailed(err.Error())
 		_ = s.store.Save(ctx, agg)
@@ -259,7 +259,7 @@ func (s *Service) UninstallChart(ctx context.Context, cmd UninstallChartCommand)
 		Namespace:   cmd.Namespace,
 		DryRun:      cmd.DryRun,
 		KeepHistory: cmd.KeepHistory,
-		Timeout: cmd.TimeoutSecs,
+		Timeout:     cmd.TimeoutSecs,
 	}); err != nil {
 		return fmt.Errorf("helm uninstall: %w", err)
 	}

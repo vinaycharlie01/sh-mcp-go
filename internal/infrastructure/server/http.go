@@ -12,9 +12,9 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/google/uuid"
 
+	"github.com/vinaycharlie01/sh-mcp-go/internal/infrastructure/config"
 	pkglogger "github.com/vinaycharlie01/sh-mcp-go/pkg/logger"
 	"github.com/vinaycharlie01/sh-mcp-go/pkg/version"
-	"github.com/vinaycharlie01/sh-mcp-go/internal/infrastructure/config"
 )
 
 // HTTPServer wraps the standard http.Server with routing and middleware.

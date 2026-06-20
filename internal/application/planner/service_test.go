@@ -55,8 +55,8 @@ func containsKeyword(text, keyword string) bool {
 
 func TestPlanService_IntentParsing(t *testing.T) {
 	cases := []struct {
-		intent   string
-		action   string
+		intent        string
+		action        string
 		hasPrometheus bool
 		hasGrafana    bool
 		hasRedis      bool

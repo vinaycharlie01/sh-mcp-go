@@ -8,8 +8,8 @@ import (
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
 
-	appdeployment "github.com/vinaycharlie01/sh-mcp-go/internal/application/deployment"
 	appcluster "github.com/vinaycharlie01/sh-mcp-go/internal/application/cluster"
+	appdeployment "github.com/vinaycharlie01/sh-mcp-go/internal/application/deployment"
 	appplanner "github.com/vinaycharlie01/sh-mcp-go/internal/application/planner"
 	"github.com/vinaycharlie01/sh-mcp-go/internal/infrastructure/config"
 	"github.com/vinaycharlie01/sh-mcp-go/internal/ports/outbound"
@@ -17,10 +17,10 @@ import (
 
 // Server wraps the MCP server and registers all sh-mcp-go tools.
 type Server struct {
-	mcp        *server.MCPServer
-	handler    *Handler
-	cfg        *config.MCPConfig
-	logger     *slog.Logger
+	mcp     *server.MCPServer
+	handler *Handler
+	cfg     *config.MCPConfig
+	logger  *slog.Logger
 }
 
 // NewServer creates and configures the MCP server with all tools registered.

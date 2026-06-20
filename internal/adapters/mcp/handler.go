@@ -8,8 +8,8 @@ import (
 
 	"github.com/mark3labs/mcp-go/mcp"
 
-	appdeployment "github.com/vinaycharlie01/sh-mcp-go/internal/application/deployment"
 	appcluster "github.com/vinaycharlie01/sh-mcp-go/internal/application/cluster"
+	appdeployment "github.com/vinaycharlie01/sh-mcp-go/internal/application/deployment"
 	appplanner "github.com/vinaycharlie01/sh-mcp-go/internal/application/planner"
 	"github.com/vinaycharlie01/sh-mcp-go/internal/ports/outbound"
 )
@@ -431,11 +431,11 @@ func (h *Handler) RecommendUpgrade(ctx context.Context, req mcp.CallToolRequest)
 	latestVersion, _ := h.helmPort.ResolveVersion(ctx, chartName, repoURL, "")
 
 	return toolJSON(map[string]any{
-		"release_name":    releaseName,
-		"current_version": currentVersion,
-		"latest_version":  latestVersion,
+		"release_name":        releaseName,
+		"current_version":     currentVersion,
+		"latest_version":      latestVersion,
 		"upgrade_recommended": latestVersion != "" && latestVersion != currentVersion,
-		"notes": fmt.Sprintf("Use upgrade_chart with version=%s to upgrade", latestVersion),
+		"notes":               fmt.Sprintf("Use upgrade_chart with version=%s to upgrade", latestVersion),
 	})
 }
 

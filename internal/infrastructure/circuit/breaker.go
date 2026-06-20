@@ -24,11 +24,11 @@ type Breaker struct {
 
 // Settings configures the circuit breaker behaviour.
 type Settings struct {
-	Name        string
-	MaxRequests uint32
-	Interval    time.Duration
-	Timeout     time.Duration
-	ReadyToTrip func(counts gobreaker.Counts) bool
+	Name          string
+	MaxRequests   uint32
+	Interval      time.Duration
+	Timeout       time.Duration
+	ReadyToTrip   func(counts gobreaker.Counts) bool
 	OnStateChange func(name string, from, to State)
 }
 
@@ -101,8 +101,8 @@ const (
 	k8sBreakerInterval    = 30 * time.Second
 	k8sBreakerTimeout     = 15 * time.Second
 
-	tripMinRequests    uint32  = 3
-	tripFailureRatio   float64 = 0.6
+	tripMinRequests  uint32  = 3
+	tripFailureRatio float64 = 0.6
 )
 
 func defaultReadyToTrip(counts gobreaker.Counts) bool {

@@ -15,11 +15,11 @@ import (
 
 // DeploymentPlan is the output of the AI deployment planner.
 type DeploymentPlan struct {
-	PlanID      string
-	Intent      string
-	Steps       []plan.Step
-	RollbackPlan *DeploymentPlan
-	Warnings    []string
+	PlanID        string
+	Intent        string
+	Steps         []plan.Step
+	RollbackPlan  *DeploymentPlan
+	Warnings      []string
 	EstimatedMins int
 }
 
@@ -73,11 +73,11 @@ func (s *Service) Plan(ctx context.Context, intent string, namespace string) (*D
 	domainPlan := plan.NewPlan(intent, steps)
 
 	return &DeploymentPlan{
-		PlanID:       domainPlan.ID(),
-		Intent:       intent,
-		Steps:        steps,
-		RollbackPlan: rollback,
-		Warnings:     warnings,
+		PlanID:        domainPlan.ID(),
+		Intent:        intent,
+		Steps:         steps,
+		RollbackPlan:  rollback,
+		Warnings:      warnings,
 		EstimatedMins: estimateMinutes(steps),
 	}, nil
 }
@@ -262,36 +262,36 @@ func (s *Service) parseIntent(intent, namespace string) (*Intent, error) {
 // detectApps maps well-known application names from natural language.
 func detectApps(intent string) []AppIntent {
 	catalogue := []struct {
-		keywords    []string
-		app         AppIntent
+		keywords []string
+		app      AppIntent
 	}{
 		{
 			keywords: []string{"prometheus"},
 			app: AppIntent{
-				Name:      "prometheus",
-				ChartName: "kube-prometheus-stack",
-				RepoURL:   "https://prometheus-community.github.io/helm-charts",
+				Name:        "prometheus",
+				ChartName:   "kube-prometheus-stack",
+				RepoURL:     "https://prometheus-community.github.io/helm-charts",
 				Persistence: true,
 			},
 		},
 		{
 			keywords: []string{"grafana"},
 			app: AppIntent{
-				Name:      "grafana",
-				ChartName: "grafana",
-				RepoURL:   "https://grafana.github.io/helm-charts",
+				Name:        "grafana",
+				ChartName:   "grafana",
+				RepoURL:     "https://grafana.github.io/helm-charts",
 				Persistence: true,
-				Ingress:    true,
+				Ingress:     true,
 			},
 		},
 		{
 			keywords: []string{"redis"},
 			app: AppIntent{
-				Name:      "redis",
-				ChartName: "redis",
-				RepoURL:   "https://charts.bitnami.com/bitnami",
+				Name:        "redis",
+				ChartName:   "redis",
+				RepoURL:     "https://charts.bitnami.com/bitnami",
 				Persistence: true,
-				HA:         strings.Contains(intent, "ha") || strings.Contains(intent, "high availability"),
+				HA:          strings.Contains(intent, "ha") || strings.Contains(intent, "high availability"),
 			},
 		},
 		{
@@ -321,9 +321,9 @@ func detectApps(intent string) []AppIntent {
 		{
 			keywords: []string{"loki"},
 			app: AppIntent{
-				Name:      "loki",
-				ChartName: "loki",
-				RepoURL:   "https://grafana.github.io/helm-charts",
+				Name:        "loki",
+				ChartName:   "loki",
+				RepoURL:     "https://grafana.github.io/helm-charts",
 				Persistence: true,
 			},
 		},
@@ -341,7 +341,7 @@ func detectApps(intent string) []AppIntent {
 				Name:      "argocd",
 				ChartName: "argo-cd",
 				RepoURL:   "https://argoproj.github.io/argo-helm",
-				Ingress:    true,
+				Ingress:   true,
 			},
 		},
 	}
@@ -360,8 +360,8 @@ func detectApps(intent string) []AppIntent {
 }
 
 const (
-	minutesPerStep  = 2
-	haReplicaCount  = 3
+	minutesPerStep = 2
+	haReplicaCount = 3
 )
 
 func estimateMinutes(steps []plan.Step) int {

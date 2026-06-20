@@ -78,6 +78,7 @@ func (c ChartReference) Validate() error {
 			return fmt.Errorf("chart version %q is not a valid semver: %w", c.Version, err)
 		}
 	}
+
 	return nil
 }
 
@@ -85,6 +86,7 @@ func (c ChartReference) String() string {
 	if c.Version != "" {
 		return fmt.Sprintf("%s:%s", c.Name, c.Version)
 	}
+
 	return c.Name
 }
 
@@ -100,6 +102,7 @@ func (v Values) Merge(overrides Values) Values {
 	for k, val := range overrides {
 		result[k] = val
 	}
+
 	return result
 }
 

@@ -25,7 +25,7 @@ import (
 )
 
 const (
-	defaultStorageGB   = 5
+	defaultStorageGB    = 5
 	rolloutTickInterval = 5 * time.Second
 )
 
@@ -382,11 +382,11 @@ func (c *Client) EstimateResources(_ context.Context, chartName, _ string, repli
 			StorageGB: 1,
 		},
 		"redis": {
-			CPURequest: fmt.Sprintf("%dm", 50*replicas),
-			CPULimit:   fmt.Sprintf("%dm", 200*replicas),
+			CPURequest:    fmt.Sprintf("%dm", 50*replicas),
+			CPULimit:      fmt.Sprintf("%dm", 200*replicas),
 			MemoryRequest: fmt.Sprintf("%dMi", 128*replicas),
 			MemoryLimit:   fmt.Sprintf("%dMi", 512*replicas),
-			StorageGB: float64(5 * replicas),
+			StorageGB:     float64(5 * replicas),
 		},
 	}
 

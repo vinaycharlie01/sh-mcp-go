@@ -409,4 +409,3 @@ func (c *Client) loadRepoIndex(_ string) (*repo.IndexFile, error) {
 	}
 	return repo.LoadIndexFile(files[0])
 }
-

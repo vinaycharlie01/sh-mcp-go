@@ -171,12 +171,12 @@ type scanner interface {
 
 func scanDeployment(row scanner) (*deployment.Deployment, error) {
 	var (
-		id, releaseName, namespace                          string
-		chartName, chartRepo, chartVersion, chartSource     string
-		valuesJSON, statusStr                               string
-		version                                             int
-		historyJSON, annotationsJSON, labelsJSON            string
-		createdAtStr, updatedAtStr                          string
+		id, releaseName, namespace                      string
+		chartName, chartRepo, chartVersion, chartSource string
+		valuesJSON, statusStr                           string
+		version                                         int
+		historyJSON, annotationsJSON, labelsJSON        string
+		createdAtStr, updatedAtStr                      string
 	)
 
 	if err := row.Scan(

@@ -25,14 +25,14 @@ type OperatorInfo struct {
 
 // OperatorInstallRequest carries parameters for installing an operator.
 type OperatorInstallRequest struct {
-	Name             string
-	Namespace        string
-	Channel          string
-	Source           string
-	SourceNamespace  string
+	Name                string
+	Namespace           string
+	Channel             string
+	Source              string
+	SourceNamespace     string
 	InstallPlanApproval string // "Automatic" or "Manual"
-	StartingCSV      string
-	TargetNamespaces []string
+	StartingCSV         string
+	TargetNamespaces    []string
 }
 
 // OperatorUpgradeRequest carries parameters for upgrading an operator.
