@@ -1,0 +1,5 @@
+# CVEs in github.com/docker/docker with no available fix as of 2026-06
+# These are transitive dependencies of helm.sh/helm/v3; no patched version exists yet.
+CVE-2026-42306
+CVE-2026-41567
+CVE-2026-41568
