@@ -10,13 +10,13 @@ import (
 
 // Policy defines retry behaviour for an operation.
 type Policy struct {
-	Attempts    uint
-	Delay       time.Duration
-	MaxDelay    time.Duration
-	DelayType   retry.DelayTypeFunc
-	RetryIf     retry.RetryIfFunc
-	OnRetry     retry.OnRetryFunc
-	Logger      *slog.Logger
+	Attempts  uint
+	Delay     time.Duration
+	MaxDelay  time.Duration
+	DelayType retry.DelayTypeFunc
+	RetryIf   retry.RetryIfFunc
+	OnRetry   retry.OnRetryFunc
+	Logger    *slog.Logger
 }
 
 const (

@@ -221,6 +221,7 @@ func (d *Deployment) IsTerminal() bool {
 func (d *Deployment) DrainEvents() []Event {
 	evts := d.events
 	d.events = make([]Event, 0)
+
 	return evts
 }
 

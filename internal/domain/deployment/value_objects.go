@@ -29,6 +29,7 @@ func (r ReleaseName) Validate() error {
 	if !releaseNameRE.MatchString(string(r)) {
 		return fmt.Errorf("release name %q is invalid: must be lowercase alphanumeric and hyphens, 1-53 chars", r)
 	}
+
 	return nil
 }
 
@@ -44,6 +45,7 @@ func (n Namespace) Validate() error {
 	if !namespaceRE.MatchString(string(n)) {
 		return fmt.Errorf("namespace %q is invalid", n)
 	}
+
 	return nil
 }
 

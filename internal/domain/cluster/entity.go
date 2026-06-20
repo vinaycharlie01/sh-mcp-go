@@ -13,12 +13,12 @@ const (
 
 // Node represents a Kubernetes cluster node.
 type Node struct {
-	Name       string
-	Status     NodeStatus
-	Roles      []string
-	Taints     []string
-	Labels     map[string]string
-	Capacity   ResourceCapacity
+	Name        string
+	Status      NodeStatus
+	Roles       []string
+	Taints      []string
+	Labels      map[string]string
+	Capacity    ResourceCapacity
 	Allocatable ResourceCapacity
 }
 
@@ -81,8 +81,8 @@ type ResourceHealth struct {
 
 // ValidationResult holds the outcome of a cluster validation check.
 type ValidationResult struct {
-	Valid    bool
-	Errors   []string
-	Warnings []string
+	Valid     bool
+	Errors    []string
+	Warnings  []string
 	CheckedAt time.Time
 }

@@ -10,18 +10,18 @@ import (
 
 // HelmInstallRequest carries the parameters for a chart install.
 type HelmInstallRequest struct {
-	ReleaseName  string
-	Namespace    string
-	ChartName    string
-	RepoURL      string
-	Version      string
-	Values       map[string]any
-	DryRun       bool
-	Wait         bool
-	WaitForJobs  bool
-	Timeout      int // seconds
-	Atomic       bool
-	CreateNS     bool
+	ReleaseName string
+	Namespace   string
+	ChartName   string
+	RepoURL     string
+	Version     string
+	Values      map[string]any
+	DryRun      bool
+	Wait        bool
+	WaitForJobs bool
+	Timeout     int // seconds
+	Atomic      bool
+	CreateNS    bool
 }
 
 // HelmUpgradeRequest carries parameters for a chart upgrade.
@@ -54,11 +54,11 @@ type HelmRollbackRequest struct {
 
 // HelmUninstallRequest carries parameters for an uninstall.
 type HelmUninstallRequest struct {
-	ReleaseName     string
-	Namespace       string
-	DryRun          bool
-	KeepHistory     bool
-	Timeout         int
+	ReleaseName string
+	Namespace   string
+	DryRun      bool
+	KeepHistory bool
+	Timeout     int
 }
 
 // HelmDiffResult contains the diff between current and desired release state.
