@@ -1,0 +1,66 @@
+run:
+  timeout: 5m
+  go: "1.23"
+
+linters:
+  enable:
+    - gofmt
+    - goimports
+    - govet
+    - errcheck
+    - staticcheck
+    - gosimple
+    - ineffassign
+    - unused
+    - gosec
+    - revive
+    - exhaustive
+    - noctx
+    - bodyclose
+    - contextcheck
+    - cyclop
+    - dupl
+    - funlen
+    - gocognit
+    - gocritic
+    - godot
+    - gomnd
+    - lll
+    - misspell
+    - nlreturn
+    - nolintlint
+    - prealloc
+    - rowserrcheck
+    - sqlclosecheck
+    - tparallel
+    - unconvert
+    - unparam
+    - wastedassign
+    - whitespace
+
+linters-settings:
+  gofmt:
+    simplify: true
+  lll:
+    line-length: 140
+  funlen:
+    lines: 120
+    statements: 60
+  cyclop:
+    max-complexity: 15
+  gomnd:
+    ignored-functions:
+      - "time.Duration"
+      - "make"
+
+issues:
+  exclude-rules:
+    - path: "_test.go"
+      linters:
+        - funlen
+        - gomnd
+        - dupl
+        - lll
+    - path: "bootstrap"
+      linters:
+        - funlen
