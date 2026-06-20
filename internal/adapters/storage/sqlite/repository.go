@@ -41,7 +41,7 @@ type Repository struct {
 }
 
 // NewRepository opens a SQLite database and applies the schema.
-func NewRepository(path string) (*Repository, error) {
+func NewRepository(ctx context.Context, path string) (*Repository, error) {
 	db, err := sql.Open("sqlite", path)
 	if err != nil {
 		return nil, fmt.Errorf("opening sqlite: %w", err)
@@ -50,7 +50,7 @@ func NewRepository(path string) (*Repository, error) {
 	db.SetMaxOpenConns(1) // SQLite is single-writer
 	db.SetMaxIdleConns(1)
 
-	if _, err := db.Exec(schema); err != nil {
+	if _, err := db.ExecContext(ctx, schema); err != nil {
 		return nil, fmt.Errorf("applying schema: %w", err)
 	}
 
@@ -145,7 +145,7 @@ func (r *Repository) ListByNamespace(ctx context.Context, ns deployment.Namespac
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	return scanDeployments(rows)
 }
@@ -159,7 +159,7 @@ func (r *Repository) ListByStatus(ctx context.Context, status deployment.Status)
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	return scanDeployments(rows)
 }
