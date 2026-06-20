@@ -163,18 +163,21 @@ func (h *Handler) UpgradeOperator(_ context.Context, req mcp.CallToolRequest) (*
 	namespace := mcp.ParseString(req, "namespace", "operators")
 	channel := mcp.ParseString(req, "channel", "")
 	version := mcp.ParseString(req, "version", "")
+
 	return toolText(fmt.Sprintf("Operator %q upgrade initiated in %q (channel: %s, version: %s)", name, namespace, channel, version)), nil
 }
 
 func (h *Handler) RollbackOperator(_ context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	name := mcp.ParseString(req, "name", "")
 	namespace := mcp.ParseString(req, "namespace", "operators")
+
 	return toolText(fmt.Sprintf("Operator %q rollback initiated in %q", name, namespace)), nil
 }
 
 func (h *Handler) DeleteOperator(_ context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	name := mcp.ParseString(req, "name", "")
 	namespace := mcp.ParseString(req, "namespace", "operators")
+
 	return toolText(fmt.Sprintf("Operator %q deleted from %q", name, namespace)), nil
 }
 
@@ -205,6 +208,7 @@ func (h *Handler) PlanDeployment(ctx context.Context, req mcp.CallToolRequest) (
 					"steps": plan.RollbackPlan.Steps,
 				}
 			}
+
 			return nil
 		}(),
 	})
@@ -215,6 +219,7 @@ func (h *Handler) ValidateCluster(ctx context.Context, _ mcp.CallToolRequest) (*
 	if err != nil {
 		return toolError(fmt.Sprintf("validate_cluster failed: %v", err)), nil
 	}
+
 	return toolJSON(result)
 }
 
@@ -226,6 +231,7 @@ func (h *Handler) ValidateRelease(ctx context.Context, req mcp.CallToolRequest) 
 	if err != nil {
 		return toolError(fmt.Sprintf("validate_release failed: %v", err)), nil
 	}
+
 	return toolJSON(map[string]any{
 		"release_name": releaseName,
 		"namespace":    namespace,
@@ -240,6 +246,7 @@ func (h *Handler) ClusterInventory(ctx context.Context, _ mcp.CallToolRequest) (
 	if err != nil {
 		return toolError(fmt.Sprintf("cluster_inventory failed: %v", err)), nil
 	}
+
 	return toolJSON(info)
 }
 
@@ -271,6 +278,7 @@ func (h *Handler) ReleaseInventory(ctx context.Context, req mcp.CallToolRequest)
 			"revision":    r.Version,
 		})
 	}
+
 	return toolJSON(map[string]any{"releases": items, "count": len(items)})
 }
 
@@ -285,6 +293,7 @@ func (h *Handler) ResourceEstimation(ctx context.Context, req mcp.CallToolReques
 	if err != nil {
 		return toolError(fmt.Sprintf("resource_estimation failed: %v", err)), nil
 	}
+
 	return toolJSON(estimate)
 }
 
@@ -525,6 +534,7 @@ func toolJSON(v any) (*mcp.CallToolResult, error) {
 	if err != nil {
 		return toolError(fmt.Sprintf("serializing result: %v", err)), nil
 	}
+
 	return mcp.NewToolResultText(string(data)), nil
 }
 
@@ -549,5 +559,6 @@ func extractDeps(values map[string]any) []string {
 			}
 		}
 	}
+
 	return deps
 }

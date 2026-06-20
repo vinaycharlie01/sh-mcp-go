@@ -23,6 +23,7 @@ func New(level slog.Level) *slog.Logger {
 		Level:     level,
 		AddSource: true,
 	}
+
 	return slog.New(slog.NewJSONHandler(os.Stdout, opts))
 }
 
@@ -56,23 +57,27 @@ func FromContext(ctx context.Context, logger *slog.Logger) *slog.Logger {
 	if len(attrs) == 0 {
 		return logger
 	}
+
 	return logger.With(attrs...)
 }
 
 // CorrelationID returns the correlation ID stored in context.
 func CorrelationID(ctx context.Context) string {
 	v, _ := ctx.Value(correlationIDKey).(string)
+
 	return v
 }
 
 // RequestID returns the request ID stored in context.
 func RequestID(ctx context.Context) string {
 	v, _ := ctx.Value(requestIDKey).(string)
+
 	return v
 }
 
 // TraceID returns the trace ID stored in context.
 func TraceID(ctx context.Context) string {
 	v, _ := ctx.Value(traceIDKey).(string)
+
 	return v
 }

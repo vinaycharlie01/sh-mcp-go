@@ -19,6 +19,7 @@ func newTestRepo(t *testing.T) (*sqlite.Repository, func()) {
 	if err != nil {
 		t.Fatalf("NewRepository: %v", err)
 	}
+
 	return repo, func() {
 		_ = repo.Close()
 		_ = os.Remove(path)
@@ -41,6 +42,7 @@ func newDeployment(t *testing.T, release, namespace string) *deployment.Deployme
 	if err != nil {
 		t.Fatalf("creating deployment: %v", err)
 	}
+
 	return d
 }
 

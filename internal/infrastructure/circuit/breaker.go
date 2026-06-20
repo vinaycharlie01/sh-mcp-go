@@ -70,6 +70,7 @@ func (b *Breaker) Execute(ctx context.Context, fn func() (any, error)) (any, err
 	if err != nil {
 		return nil, fmt.Errorf("circuit breaker %q: %w", b.cb.Name(), err)
 	}
+
 	return result, nil
 }
 
@@ -107,6 +108,7 @@ const (
 
 func defaultReadyToTrip(counts gobreaker.Counts) bool {
 	failureRatio := float64(counts.TotalFailures) / float64(counts.Requests)
+
 	return counts.Requests >= tripMinRequests && failureRatio >= tripFailureRatio
 }
 

@@ -98,6 +98,7 @@ func (s *Service) GenerateRCA(ctx context.Context, releaseName, namespace string
 	for i, a := range analysis {
 		result += fmt.Sprintf("%d. %s\n", i+1, a)
 	}
+
 	return result, nil
 }
 

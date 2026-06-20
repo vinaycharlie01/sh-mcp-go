@@ -74,6 +74,7 @@ func (c *Client) actionConfig(namespace string) (*action.Configuration, error) {
 	); err != nil {
 		return nil, fmt.Errorf("initializing helm action config for namespace %q: %w", namespace, err)
 	}
+
 	return actionCfg, nil
 }
 
@@ -115,6 +116,7 @@ func (c *Client) Install(ctx context.Context, req outbound.HelmInstallRequest) (
 	err = retry.Do(ctx, c.retryPolicy, func() error {
 		var runErr error
 		rel, runErr = install.RunWithContext(ctx, chrt, req.Values)
+
 		return runErr
 	})
 	if err != nil {
@@ -125,6 +127,7 @@ func (c *Client) Install(ctx context.Context, req outbound.HelmInstallRequest) (
 		slog.String("release", rel.Name),
 		slog.Int("revision", rel.Version),
 	)
+
 	return rel, nil
 }
 
@@ -165,6 +168,7 @@ func (c *Client) Upgrade(ctx context.Context, req outbound.HelmUpgradeRequest) (
 	err = retry.Do(ctx, c.retryPolicy, func() error {
 		var runErr error
 		rel, runErr = upgrade.RunWithContext(ctx, req.ReleaseName, chrt, req.Values)
+
 		return runErr
 	})
 	if err != nil {
@@ -172,6 +176,7 @@ func (c *Client) Upgrade(ctx context.Context, req outbound.HelmUpgradeRequest) (
 	}
 
 	c.logger.Info("helm upgrade succeeded", slog.String("release", rel.Name))
+
 	return rel, nil
 }
 
@@ -218,6 +223,7 @@ func (c *Client) Uninstall(ctx context.Context, req outbound.HelmUninstallReques
 	}
 
 	_, err = uninstall.Run(req.ReleaseName)
+
 	return err
 }
 
@@ -229,6 +235,7 @@ func (c *Client) GetRelease(ctx context.Context, releaseName, namespace string) 
 	}
 
 	get := action.NewGet(actionCfg)
+
 	return get.Run(releaseName)
 }
 
@@ -242,6 +249,7 @@ func (c *Client) ListReleases(ctx context.Context, namespace string) ([]*release
 	list := action.NewList(actionCfg)
 	list.AllNamespaces = namespace == ""
 	list.All = true
+
 	return list.Run()
 }
 
@@ -268,6 +276,7 @@ func (c *Client) DryRunInstall(ctx context.Context, req outbound.HelmInstallRequ
 	if rel == nil {
 		return "", nil
 	}
+
 	return rel.Manifest, nil
 }
 
@@ -281,6 +290,7 @@ func (c *Client) DryRunUpgrade(ctx context.Context, req outbound.HelmUpgradeRequ
 	if rel == nil {
 		return "", nil
 	}
+
 	return rel.Manifest, nil
 }
 
@@ -290,6 +300,7 @@ func (c *Client) Diff(ctx context.Context, req outbound.HelmUpgradeRequest) (*ou
 	if err != nil {
 		return nil, err
 	}
+
 	return &outbound.HelmDiffResult{
 		HasChanges: manifest != "",
 		Diff:       manifest,
@@ -302,6 +313,7 @@ func (c *Client) ValidateChart(ctx context.Context, chartName, repoURL, version 
 	if err != nil {
 		return fmt.Errorf("loading chart for validation: %w", err)
 	}
+
 	return chrt.Validate()
 }
 
@@ -311,6 +323,7 @@ func (c *Client) GenerateValues(ctx context.Context, chartName, repoURL, version
 	if err != nil {
 		return nil, err
 	}
+
 	return chrt.Values, nil
 }
 
@@ -339,6 +352,7 @@ func (c *Client) ResolveVersion(ctx context.Context, chartName, repoURL, constra
 			return v.Version, nil
 		}
 	}
+
 	return "", fmt.Errorf("version %q of chart %q not found", constraint, chartName)
 }
 
@@ -348,6 +362,7 @@ func (c *Client) BuildDependencies(ctx context.Context, chartName, repoURL, vers
 	// Full dependency resolution is handled automatically by LocateChart.
 	c.logger.Info("dependency build: dependencies are resolved during chart load",
 		slog.String("chart", chartName))
+
 	return nil
 }
 
@@ -393,6 +408,7 @@ func (c *Client) ensureRepo(name, url string) error {
 	}
 
 	f.Update(entry)
+
 	return f.WriteFile(c.settings.RepositoryConfig, filePerm)
 }
 
@@ -407,5 +423,6 @@ func (c *Client) loadRepoIndex(_ string) (*repo.IndexFile, error) {
 	if err != nil || len(files) == 0 {
 		return nil, fmt.Errorf("no repo index files found in cache")
 	}
+
 	return repo.LoadIndexFile(files[0])
 }

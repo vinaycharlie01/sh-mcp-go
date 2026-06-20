@@ -110,6 +110,7 @@ func (r *Repository) Save(ctx context.Context, d *deployment.Deployment) error {
 		d.CreatedAt().Format(time.RFC3339),
 		d.UpdatedAt().Format(time.RFC3339),
 	)
+
 	return err
 }
 
@@ -119,6 +120,7 @@ func (r *Repository) FindByID(ctx context.Context, id deployment.ID) (*deploymen
 		`SELECT id, release_name, namespace, chart_name, chart_repo, chart_version, chart_source,
 		        values_json, status, version, history_json, annotations_json, labels_json, created_at, updated_at
 		 FROM deployments WHERE id = ?`, id.String())
+
 	return scanDeployment(row)
 }
 
@@ -130,6 +132,7 @@ func (r *Repository) FindByReleaseName(
 		`SELECT id, release_name, namespace, chart_name, chart_repo, chart_version, chart_source,
 		        values_json, status, version, history_json, annotations_json, labels_json, created_at, updated_at
 		 FROM deployments WHERE release_name = ? AND namespace = ?`, name.String(), ns.String())
+
 	return scanDeployment(row)
 }
 
@@ -143,6 +146,7 @@ func (r *Repository) ListByNamespace(ctx context.Context, ns deployment.Namespac
 		return nil, err
 	}
 	defer rows.Close()
+
 	return scanDeployments(rows)
 }
 
@@ -156,12 +160,14 @@ func (r *Repository) ListByStatus(ctx context.Context, status deployment.Status)
 		return nil, err
 	}
 	defer rows.Close()
+
 	return scanDeployments(rows)
 }
 
 // Delete removes a deployment record.
 func (r *Repository) Delete(ctx context.Context, id deployment.ID) error {
 	_, err := r.db.ExecContext(ctx, `DELETE FROM deployments WHERE id = ?`, id.String())
+
 	return err
 }
 
@@ -189,6 +195,7 @@ func scanDeployment(row scanner) (*deployment.Deployment, error) {
 		if err == sql.ErrNoRows {
 			return nil, fmt.Errorf("deployment not found: %w", err)
 		}
+
 		return nil, err
 	}
 
@@ -241,5 +248,6 @@ func scanDeployments(rows *sql.Rows) ([]*deployment.Deployment, error) {
 		}
 		result = append(result, d)
 	}
+
 	return result, rows.Err()
 }

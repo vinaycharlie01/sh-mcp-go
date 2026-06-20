@@ -76,5 +76,6 @@ func run() error {
 	}
 
 	app.Logger.Info("sh-mcp-go stopped cleanly")
+
 	return nil
 }

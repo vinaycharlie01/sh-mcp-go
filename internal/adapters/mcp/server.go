@@ -72,6 +72,7 @@ func (s *Server) ServeSSE(_ context.Context) error {
 	}
 	s.logger.Info("starting MCP server (SSE transport)", slog.String("addr", addr))
 	sseServer := server.NewSSEServer(s.mcp, server.WithBaseURL(fmt.Sprintf("http://%s", addr)))
+
 	return sseServer.Start(addr)
 }
 

@@ -123,6 +123,7 @@ func ReleaseToChartRef(r *release.Release) deployment.ChartReference {
 	if r.Chart != nil && r.Chart.Metadata != nil {
 		name = r.Chart.Metadata.Name
 	}
+
 	return deployment.ChartReference{
 		Name:    name,
 		Version: ver,

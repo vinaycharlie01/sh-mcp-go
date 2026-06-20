@@ -101,6 +101,7 @@ func (s *Service) InstallChart(ctx context.Context, cmd InstallChartCommand) (*I
 		_ = agg.MarkFailed(err.Error())
 		_ = s.store.Save(ctx, agg)
 		s.publishEvents(ctx, agg)
+
 		return nil, fmt.Errorf("helm install: %w", err)
 	}
 
@@ -120,6 +121,7 @@ func (s *Service) InstallChart(ctx context.Context, cmd InstallChartCommand) (*I
 	}
 
 	log.Info("chart installed successfully", slog.Int("revision", rel.Version))
+
 	return &InstallChartResult{
 		DeploymentID: agg.ID().String(),
 		ReleaseName:  rel.Name,
@@ -179,6 +181,7 @@ func (s *Service) UpgradeChart(ctx context.Context, cmd UpgradeChartCommand) (*U
 		_ = agg.MarkFailed(err.Error())
 		_ = s.store.Save(ctx, agg)
 		s.publishEvents(ctx, agg)
+
 		return nil, fmt.Errorf("helm upgrade: %w", err)
 	}
 
@@ -196,6 +199,7 @@ func (s *Service) UpgradeChart(ctx context.Context, cmd UpgradeChartCommand) (*U
 	}
 
 	log.Info("chart upgraded", slog.Int("revision", rel.Version))
+
 	return &UpgradeChartResult{
 		DeploymentID: agg.ID().String(),
 		ReleaseName:  rel.Name,
@@ -239,6 +243,7 @@ func (s *Service) RollbackChart(ctx context.Context, cmd RollbackChartCommand) e
 		_ = agg.MarkFailed(err.Error())
 		_ = s.store.Save(ctx, agg)
 		s.publishEvents(ctx, agg)
+
 		return fmt.Errorf("helm rollback: %w", err)
 	}
 
@@ -247,6 +252,7 @@ func (s *Service) RollbackChart(ctx context.Context, cmd RollbackChartCommand) e
 		return err
 	}
 	s.publishEvents(ctx, agg)
+
 	return nil
 }
 
@@ -271,6 +277,7 @@ func (s *Service) UninstallChart(ctx context.Context, cmd UninstallChartCommand)
 	if err == nil {
 		_ = s.store.Delete(ctx, agg.ID())
 	}
+
 	return nil
 }
 

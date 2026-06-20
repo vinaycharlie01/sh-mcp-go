@@ -90,6 +90,7 @@ func DoWithResult[T any](ctx context.Context, policy Policy, fn func() (T, error
 	err := Do(ctx, policy, func() error {
 		var e error
 		result, e = fn()
+
 		return e
 	})
 

@@ -219,6 +219,7 @@ func (s *Service) buildRollbackPlan(intent *Intent) *DeploymentPlan {
 			},
 		))
 	}
+
 	return &DeploymentPlan{
 		Intent: "rollback: " + intent.Namespace,
 		Steps:  rollbackSteps,
@@ -356,6 +357,7 @@ func detectApps(intent string) []AppIntent {
 			}
 		}
 	}
+
 	return found
 }
 

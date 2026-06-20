@@ -78,6 +78,7 @@ type Plan struct {
 // NewPlan constructs a deployment plan from a user intent string.
 func NewPlan(intent string, steps []Step) *Plan {
 	now := time.Now().UTC()
+
 	return &Plan{
 		id:        uuid.New().String(),
 		intent:    intent,
@@ -110,6 +111,7 @@ func (p *Plan) Approve() error {
 	}
 	p.status = PlanStatusApproved
 	p.updatedAt = time.Now().UTC()
+
 	return nil
 }
 
@@ -122,6 +124,7 @@ func (p *Plan) Start(deploymentID deployment.ID) error {
 	did := deploymentID
 	p.deploymentID = &did
 	p.updatedAt = time.Now().UTC()
+
 	return nil
 }
 
@@ -141,9 +144,11 @@ func (p *Plan) UpdateStepStatus(stepID string, status StepStatus, errMsg string)
 				p.steps[i].CompletedAt = &now
 			}
 			p.updatedAt = now
+
 			return nil
 		}
 	}
+
 	return fmt.Errorf("step %q not found in plan", stepID)
 }
 
@@ -206,6 +211,7 @@ func (p *Plan) ReadySteps() []Step {
 			ready = append(ready, s)
 		}
 	}
+
 	return ready
 }
 

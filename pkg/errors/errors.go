@@ -35,6 +35,7 @@ func (e *DomainError) Error() string {
 	if e.Cause != nil {
 		return fmt.Sprintf("[%s] %s: %v", e.Code, e.Message, e.Cause)
 	}
+
 	return fmt.Sprintf("[%s] %s", e.Code, e.Message)
 }
 
@@ -61,6 +62,7 @@ func Wrap(cause error, msg string, args ...any) *DomainError {
 // WithFields attaches structured metadata to a DomainError.
 func WithFields(err *DomainError, fields map[string]any) *DomainError {
 	err.Fields = fields
+
 	return err
 }
 

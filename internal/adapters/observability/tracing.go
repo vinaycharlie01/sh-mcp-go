@@ -24,6 +24,7 @@ type TracerProvider struct {
 func NewTracerProvider(ctx context.Context, cfg *config.ObservabilityConfig) (*TracerProvider, error) {
 	if !cfg.TracingEnabled {
 		// Return a no-op provider when tracing is disabled.
+
 		return &TracerProvider{provider: sdktrace.NewTracerProvider()}, nil
 	}
 

@@ -98,12 +98,14 @@ func (c *Client) EnsureNamespace(ctx context.Context, spec outbound.NamespaceSpe
 	_, err := c.typed.CoreV1().Namespaces().Create(ctx, ns, metav1.CreateOptions{})
 	if apierrors.IsAlreadyExists(err) {
 		c.logger.Debug("namespace already exists", slog.String("namespace", spec.Name))
+
 		return nil
 	}
 	if err != nil {
 		return fmt.Errorf("creating namespace %q: %w", spec.Name, err)
 	}
 	c.logger.Info("namespace created", slog.String("namespace", spec.Name))
+
 	return nil
 }
 
@@ -113,6 +115,7 @@ func (c *Client) DeleteNamespace(ctx context.Context, name string) error {
 	if apierrors.IsNotFound(err) {
 		return nil
 	}
+
 	return err
 }
 
@@ -126,6 +129,7 @@ func (c *Client) ListNamespaces(ctx context.Context) ([]string, error) {
 	for i, ns := range list.Items {
 		names[i] = ns.Name
 	}
+
 	return names, nil
 }
 
@@ -174,6 +178,7 @@ func (c *Client) ApplyCRD(ctx context.Context, crdInfo outbound.CRDInfo) error {
 		data,
 		metav1.PatchOptions{FieldManager: "sh-mcp-go", Force: boolPtr(true)},
 	)
+
 	return err
 }
 
@@ -197,6 +202,7 @@ func (c *Client) ListCRDs(ctx context.Context) ([]cluster.CRD, error) {
 			Kind:    item.Spec.Names.Kind,
 		})
 	}
+
 	return crds, nil
 }
 
@@ -209,6 +215,7 @@ func (c *Client) CRDExists(ctx context.Context, name string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
+
 	return true, nil
 }
 
@@ -218,6 +225,7 @@ func (c *Client) GetServerVersion(ctx context.Context) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("getting server version: %w", err)
 	}
+
 	return ver.GitVersion, nil
 }
 
@@ -341,6 +349,7 @@ func (c *Client) ValidateCluster(ctx context.Context) (*cluster.ValidationResult
 	if err != nil {
 		result.Valid = false
 		result.Errors = append(result.Errors, fmt.Sprintf("cannot reach API server: %v", err))
+
 		return result, nil
 	}
 	c.logger.Info("cluster reachable", slog.String("version", ver))
@@ -393,6 +402,7 @@ func (c *Client) EstimateResources(_ context.Context, chartName, _ string, repli
 	if est, ok := estimates[chartName]; ok {
 		return est, nil
 	}
+
 	return &outbound.ResourceEstimate{
 		CPURequest:    "100m",
 		CPULimit:      "500m",
@@ -453,6 +463,7 @@ func (c *Client) listNodes(ctx context.Context) ([]cluster.Node, error) {
 			},
 		})
 	}
+
 	return nodes, nil
 }
 
@@ -464,20 +475,24 @@ func (c *Client) isWorkloadReady(ctx context.Context, kind, name, namespace stri
 		if err != nil {
 			return false, err
 		}
+
 		return d.Status.ReadyReplicas == *d.Spec.Replicas, nil
 	case "StatefulSet":
 		ss, err := c.typed.AppsV1().StatefulSets(namespace).Get(ctx, name, metav1.GetOptions{})
 		if err != nil {
 			return false, err
 		}
+
 		return ss.Status.ReadyReplicas == *ss.Spec.Replicas, nil
 	case "DaemonSet":
 		ds, err := c.typed.AppsV1().DaemonSets(namespace).Get(ctx, name, metav1.GetOptions{})
 		if err != nil {
 			return false, err
 		}
+
 		return ds.Status.NumberReady == ds.Status.DesiredNumberScheduled, nil
 	}
+
 	return false, fmt.Errorf("unsupported kind %q", kind)
 }
 
@@ -489,6 +504,7 @@ func buildRESTConfig(cfg *config.KubernetesConfig) (*rest.Config, error) {
 	if cfg.KubeconfigPath != "" {
 		return clientcmd.BuildConfigFromFlags("", cfg.KubeconfigPath)
 	}
+
 	return clientcmd.NewNonInteractiveDeferredLoadingClientConfig(
 		clientcmd.NewDefaultClientConfigLoadingRules(),
 		&clientcmd.ConfigOverrides{},

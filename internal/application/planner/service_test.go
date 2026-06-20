@@ -50,6 +50,7 @@ func containsKeyword(text, keyword string) bool {
 			return true
 		}
 	}
+
 	return false
 }
 
