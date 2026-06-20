@@ -24,7 +24,7 @@ linters:
     - gocognit
     - gocritic
     - godot
-    - gomnd
+    - mnd
     - lll
     - misspell
     - nlreturn
@@ -48,7 +48,7 @@ linters-settings:
     statements: 60
   cyclop:
     max-complexity: 15
-  gomnd:
+  mnd:
     ignored-functions:
       - "time.Duration"
       - "make"
@@ -58,7 +58,7 @@ issues:
     - path: "_test.go"
       linters:
         - funlen
-        - gomnd
+        - mnd
         - dupl
         - lll
     - path: "bootstrap"
