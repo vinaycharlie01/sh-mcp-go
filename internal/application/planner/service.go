@@ -6,6 +6,9 @@ import (
 	"log/slog"
 	"strings"
 
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
+
 	"github.com/vinaycharlie01/sh-mcp-go/internal/domain/plan"
 	"github.com/vinaycharlie01/sh-mcp-go/internal/ports/outbound"
 )
@@ -81,7 +84,7 @@ func (s *Service) Plan(ctx context.Context, intent string, namespace string) (*D
 
 // buildSteps converts parsed intent into ordered, dependency-aware steps.
 func (s *Service) buildSteps(ctx context.Context, intent *Intent) ([]plan.Step, []string, error) {
-	var steps []plan.Step
+	steps := make([]plan.Step, 0, len(intent.Apps)+2)
 	var warnings []string
 
 	// Validate cluster first
@@ -154,14 +157,14 @@ func (s *Service) buildSteps(ctx context.Context, intent *Intent) ([]plan.Step, 
 			values = make(map[string]any)
 		}
 		if app.HA {
-			values["replicaCount"] = 3
+			values["replicaCount"] = haReplicaCount
 		}
 		if app.Persistence {
 			values["persistence.enabled"] = true
 		}
 
 		installStep := plan.NewStep(actionType,
-			fmt.Sprintf("%s %s@%s in %s", strings.Title(intent.Action), app.ChartName, version, intent.Namespace),
+			fmt.Sprintf("%s %s@%s in %s", cases.Title(language.English).String(intent.Action), app.ChartName, version, intent.Namespace),
 			map[string]any{
 				"release_name": app.Name,
 				"namespace":    intent.Namespace,
@@ -204,7 +207,7 @@ func (s *Service) buildSteps(ctx context.Context, intent *Intent) ([]plan.Step, 
 
 // buildRollbackPlan generates a rollback plan for the deployment.
 func (s *Service) buildRollbackPlan(intent *Intent) *DeploymentPlan {
-	var rollbackSteps []plan.Step
+	rollbackSteps := make([]plan.Step, 0, len(intent.Apps))
 	for _, app := range intent.Apps {
 		rollbackSteps = append(rollbackSteps, plan.NewStep(
 			plan.StepRollbackChart,
@@ -345,6 +348,7 @@ func detectApps(intent string) []AppIntent {
 		for _, kw := range entry.keywords {
 			if strings.Contains(intent, kw) {
 				found = append(found, entry.app)
+
 				break
 			}
 		}
@@ -352,6 +356,11 @@ func detectApps(intent string) []AppIntent {
 	return found
 }
 
+const (
+	minutesPerStep  = 2
+	haReplicaCount  = 3
+)
+
 func estimateMinutes(steps []plan.Step) int {
-	return len(steps) * 2
+	return len(steps) * minutesPerStep
 }

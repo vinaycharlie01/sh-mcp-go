@@ -35,10 +35,7 @@ type Settings struct {
 // NewBreaker creates a new circuit breaker with the given settings.
 func NewBreaker(s Settings) *Breaker {
 	if s.ReadyToTrip == nil {
-		s.ReadyToTrip = func(counts gobreaker.Counts) bool {
-			failureRatio := float64(counts.TotalFailures) / float64(counts.Requests)
-			return counts.Requests >= 3 && failureRatio >= 0.6
-		}
+		s.ReadyToTrip = defaultReadyToTrip
 	}
 
 	gs := gobreaker.Settings{
@@ -95,13 +92,29 @@ func gbState(s gobreaker.State) State {
 	}
 }
 
+const (
+	helmBreakerInterval   = 60 * time.Second
+	helmBreakerTimeout    = 30 * time.Second
+	k8sBreakerMaxRequests = 2
+	k8sBreakerInterval    = 30 * time.Second
+	k8sBreakerTimeout     = 15 * time.Second
+
+	tripMinRequests    uint32  = 3
+	tripFailureRatio   float64 = 0.6
+)
+
+func defaultReadyToTrip(counts gobreaker.Counts) bool {
+	failureRatio := float64(counts.TotalFailures) / float64(counts.Requests)
+	return counts.Requests >= tripMinRequests && failureRatio >= tripFailureRatio
+}
+
 // DefaultHelmBreaker creates a circuit breaker tuned for Helm operations.
 func DefaultHelmBreaker() *Breaker {
 	return NewBreaker(Settings{
 		Name:        "helm",
 		MaxRequests: 1,
-		Interval:    60 * time.Second,
-		Timeout:     30 * time.Second,
+		Interval:    helmBreakerInterval,
+		Timeout:     helmBreakerTimeout,
 	})
 }
 
@@ -109,8 +122,8 @@ func DefaultHelmBreaker() *Breaker {
 func DefaultK8sBreaker() *Breaker {
 	return NewBreaker(Settings{
 		Name:        "kubernetes",
-		MaxRequests: 2,
-		Interval:    30 * time.Second,
-		Timeout:     15 * time.Second,
+		MaxRequests: k8sBreakerMaxRequests,
+		Interval:    k8sBreakerInterval,
+		Timeout:     k8sBreakerTimeout,
 	})
 }

@@ -24,6 +24,8 @@ import (
 	"github.com/vinaycharlie01/sh-mcp-go/internal/ports/outbound"
 )
 
+const defaultStorageGB = 5
+
 // Client implements outbound.KubernetesPort using the official Go SDK.
 // No kubectl is executed. All operations use client-go and controller-runtime APIs.
 type Client struct {
@@ -315,6 +317,7 @@ func (c *Client) WaitForRollout(ctx context.Context, kind, name, namespace strin
 			ready, err := c.isWorkloadReady(ctx, kind, name, namespace)
 			if err != nil {
 				c.logger.Warn("checking workload ready", slog.String("error", err.Error()))
+
 				continue
 			}
 			if ready {
@@ -388,10 +391,12 @@ func (c *Client) EstimateResources(_ context.Context, chartName, _ string, repli
 		return est, nil
 	}
 	return &outbound.ResourceEstimate{
-		CPURequest: "100m", CPULimit: "500m",
-		MemoryRequest: "128Mi", MemoryLimit: "512Mi",
-		StorageGB: 5,
-		Notes:     []string{"estimate based on defaults; tune for production"},
+		CPURequest:    "100m",
+		CPULimit:      "500m",
+		MemoryRequest: "128Mi",
+		MemoryLimit:   "512Mi",
+		StorageGB:     defaultStorageGB,
+		Notes:         []string{"estimate based on defaults; tune for production"},
 	}, nil
 }
 

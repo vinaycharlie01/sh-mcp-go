@@ -14,6 +14,8 @@ import (
 	"github.com/vinaycharlie01/sh-mcp-go/internal/ports/outbound"
 )
 
+const defaultTimeoutSeconds = 300
+
 // Handler implements all MCP tool handler functions.
 type Handler struct {
 	deploymentSvc *appdeployment.Service
@@ -35,7 +37,7 @@ func (h *Handler) InstallChart(ctx context.Context, req mcp.CallToolRequest) (*m
 	wait := mcp.ParseBoolean(req, "wait", true)
 	atomic := mcp.ParseBoolean(req, "atomic", true)
 	createNS := mcp.ParseBoolean(req, "create_namespace", true)
-	timeout := int(mcp.ParseFloat64(req, "timeout_seconds", 300))
+	timeout := int(mcp.ParseFloat64(req, "timeout_seconds", defaultTimeoutSeconds))
 
 	var values map[string]any
 	if v, ok := req.GetArguments()["values"]; ok && v != nil {
@@ -339,6 +341,7 @@ func (h *Handler) HealthCheck(ctx context.Context, req mcp.CallToolRequest) (*mc
 	for _, h := range health {
 		if !h.Ready {
 			allHealthy = false
+
 			break
 		}
 	}

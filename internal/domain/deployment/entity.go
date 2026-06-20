@@ -73,6 +73,7 @@ func New(
 		labels:      make(map[string]string),
 	}
 	d.record(NewDeploymentCreatedEvent(d.id, releaseName, ns, chart))
+
 	return d, nil
 }
 
@@ -116,6 +117,7 @@ func (d *Deployment) StartDeployment() error {
 	d.status = StatusDeploying
 	d.updatedAt = time.Now().UTC()
 	d.record(NewDeploymentStartedEvent(d.id, d.name, d.namespace))
+
 	return nil
 }
 
@@ -135,6 +137,7 @@ func (d *Deployment) MarkSucceeded(helmRevision int) error {
 	d.version++
 	d.updatedAt = time.Now().UTC()
 	d.record(NewDeploymentSucceededEvent(d.id, d.name, d.namespace, helmRevision))
+
 	return nil
 }
 

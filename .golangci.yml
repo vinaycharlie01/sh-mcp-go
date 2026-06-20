@@ -52,6 +52,8 @@ linters-settings:
     ignored-functions:
       - "time.Duration"
       - "make"
+      - "fmt.Sprintf"
+      - "float64"
 
 issues:
   exclude-rules:

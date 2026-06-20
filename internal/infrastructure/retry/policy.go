@@ -19,12 +19,21 @@ type Policy struct {
 	Logger      *slog.Logger
 }
 
+const (
+	helmRetryAttempts = 3
+	helmRetryDelay    = 2 * time.Second
+	helmRetryMaxDelay = 30 * time.Second
+	k8sRetryAttempts  = 5
+	k8sRetryDelay     = 1 * time.Second
+	k8sRetryMaxDelay  = 15 * time.Second
+)
+
 // DefaultHelmPolicy is a sensible retry policy for Helm operations.
 func DefaultHelmPolicy(logger *slog.Logger) Policy {
 	return Policy{
-		Attempts:  3,
-		Delay:     2 * time.Second,
-		MaxDelay:  30 * time.Second,
+		Attempts:  helmRetryAttempts,
+		Delay:     helmRetryDelay,
+		MaxDelay:  helmRetryMaxDelay,
 		DelayType: retry.BackOffDelay,
 		Logger:    logger,
 	}
@@ -33,9 +42,9 @@ func DefaultHelmPolicy(logger *slog.Logger) Policy {
 // DefaultK8sPolicy is a sensible retry policy for Kubernetes API calls.
 func DefaultK8sPolicy(logger *slog.Logger) Policy {
 	return Policy{
-		Attempts:  5,
-		Delay:     1 * time.Second,
-		MaxDelay:  15 * time.Second,
+		Attempts:  k8sRetryAttempts,
+		Delay:     k8sRetryDelay,
+		MaxDelay:  k8sRetryMaxDelay,
 		DelayType: retry.BackOffDelay,
 		Logger:    logger,
 	}

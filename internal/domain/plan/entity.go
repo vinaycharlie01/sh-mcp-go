@@ -197,6 +197,7 @@ func (p *Plan) ReadySteps() []Step {
 		for _, dep := range s.DependsOn {
 			if !completed[dep] {
 				allDepsmet = false
+
 				break
 			}
 		}
