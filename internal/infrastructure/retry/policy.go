@@ -92,5 +92,6 @@ func DoWithResult[T any](ctx context.Context, policy Policy, fn func() (T, error
 		result, e = fn()
 		return e
 	})
+
 	return result, err
 }

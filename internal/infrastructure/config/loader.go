@@ -61,6 +61,7 @@ func (l *Loader) Load() (*Config, error) {
 // LoadFromFile loads configuration from a specific file path.
 func (l *Loader) LoadFromFile(path string) (*Config, error) {
 	l.v.SetConfigFile(path)
+
 	return l.Load()
 }
 

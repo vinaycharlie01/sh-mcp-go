@@ -28,5 +28,6 @@ func (p *LogPublisher) Publish(_ context.Context, events []deployment.Event) err
 			slog.Time("occurred_at", e.OccurredAt()),
 		)
 	}
+
 	return nil
 }
