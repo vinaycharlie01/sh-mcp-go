@@ -1,28 +1,10 @@
 package planner_test
 
 import (
-	"context"
 	"testing"
 
 	"github.com/vinaycharlie01/sh-mcp-go/internal/application/planner"
 )
-
-// fakeHelm is a lightweight stub for the planner tests.
-type fakeHelm struct{}
-
-func (f *fakeHelm) ResolveVersion(_ context.Context, _, _, _ string) (string, error) {
-	return "1.0.0", nil
-}
-func (f *fakeHelm) GenerateValues(_ context.Context, _, _, _ string) (map[string]any, error) {
-	return map[string]any{}, nil
-}
-
-// fakeK8s is a lightweight stub for cluster calls.
-type fakeK8s struct{}
-
-func (f *fakeK8s) ValidateCluster(_ context.Context) (interface{ GetValid() bool }, error) {
-	return nil, nil
-}
 
 func TestPlanDeployment_DetectsPrometheus(t *testing.T) {
 	// We can't directly inject fakes into planner.Service without the outbound interface.
@@ -60,6 +42,7 @@ func containsKeyword(text, keyword string) bool {
 			}
 			if a != b {
 				match = false
+
 				break
 			}
 		}
@@ -87,7 +70,7 @@ func TestPlanService_IntentParsing(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		t.Run(tc.intent, func(t *testing.T) {
+		t.Run(tc.intent, func(_ *testing.T) {
 			// These assertions verify our planner logic without network calls
 			_ = planner.NewService(nil, nil, nil)
 			// In a real test we'd inject fakes; here we test the intent parsing contract

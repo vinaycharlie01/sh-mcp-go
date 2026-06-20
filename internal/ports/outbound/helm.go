@@ -89,7 +89,7 @@ type HelmPort interface {
 	ListReleases(ctx context.Context, namespace string) ([]*release.Release, error)
 
 	// GetHistory returns the revision history of a release.
-	GetHistory(ctx context.Context, releaseName, namespace string, max int) ([]*release.Release, error)
+	GetHistory(ctx context.Context, releaseName, namespace string, maxRevisions int) ([]*release.Release, error)
 
 	// DryRunInstall performs a dry-run install and returns the rendered manifests.
 	DryRunInstall(ctx context.Context, req HelmInstallRequest) (string, error)

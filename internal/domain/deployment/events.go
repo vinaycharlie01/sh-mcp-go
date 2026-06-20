@@ -34,9 +34,9 @@ type baseEvent struct {
 	occurredAt  time.Time
 }
 
-func (e baseEvent) EventID() string      { return e.eventID }
-func (e baseEvent) AggregateID() ID      { return e.aggregateID }
-func (e baseEvent) Type() EventType      { return e.eventType }
+func (e baseEvent) EventID() string       { return e.eventID }
+func (e baseEvent) AggregateID() ID       { return e.aggregateID }
+func (e baseEvent) Type() EventType       { return e.eventType }
 func (e baseEvent) OccurredAt() time.Time { return e.occurredAt }
 
 func newBase(id ID, t EventType) baseEvent {

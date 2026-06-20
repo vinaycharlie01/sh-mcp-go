@@ -145,7 +145,7 @@ func (h *Handler) UninstallChart(ctx context.Context, req mcp.CallToolRequest) (
 
 // --- Operator handlers ---
 
-func (h *Handler) InstallOperator(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+func (h *Handler) InstallOperator(_ context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	name := mcp.ParseString(req, "name", "")
 	namespace := mcp.ParseString(req, "namespace", "operators")
 	channel := mcp.ParseString(req, "channel", "stable")
@@ -158,7 +158,7 @@ func (h *Handler) InstallOperator(ctx context.Context, req mcp.CallToolRequest) 
 	)), nil
 }
 
-func (h *Handler) UpgradeOperator(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+func (h *Handler) UpgradeOperator(_ context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	name := mcp.ParseString(req, "name", "")
 	namespace := mcp.ParseString(req, "namespace", "operators")
 	channel := mcp.ParseString(req, "channel", "")
@@ -166,13 +166,13 @@ func (h *Handler) UpgradeOperator(ctx context.Context, req mcp.CallToolRequest) 
 	return toolText(fmt.Sprintf("Operator %q upgrade initiated in %q (channel: %s, version: %s)", name, namespace, channel, version)), nil
 }
 
-func (h *Handler) RollbackOperator(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+func (h *Handler) RollbackOperator(_ context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	name := mcp.ParseString(req, "name", "")
 	namespace := mcp.ParseString(req, "namespace", "operators")
 	return toolText(fmt.Sprintf("Operator %q rollback initiated in %q", name, namespace)), nil
 }
 
-func (h *Handler) DeleteOperator(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+func (h *Handler) DeleteOperator(_ context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	name := mcp.ParseString(req, "name", "")
 	namespace := mcp.ParseString(req, "namespace", "operators")
 	return toolText(fmt.Sprintf("Operator %q deleted from %q", name, namespace)), nil
@@ -210,7 +210,7 @@ func (h *Handler) PlanDeployment(ctx context.Context, req mcp.CallToolRequest) (
 	})
 }
 
-func (h *Handler) ValidateCluster(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+func (h *Handler) ValidateCluster(ctx context.Context, _ mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	result, err := h.clusterSvc.ValidateCluster(ctx)
 	if err != nil {
 		return toolError(fmt.Sprintf("validate_cluster failed: %v", err)), nil
@@ -235,7 +235,7 @@ func (h *Handler) ValidateRelease(ctx context.Context, req mcp.CallToolRequest) 
 
 // --- Inventory handlers ---
 
-func (h *Handler) ClusterInventory(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+func (h *Handler) ClusterInventory(ctx context.Context, _ mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	info, err := h.clusterSvc.GetInventory(ctx)
 	if err != nil {
 		return toolError(fmt.Sprintf("cluster_inventory failed: %v", err)), nil
@@ -318,7 +318,10 @@ func (h *Handler) SecurityScan(ctx context.Context, req mcp.CallToolRequest) (*m
 	} else {
 		findings = append(findings, map[string]string{
 			"severity": "INFO",
-			"message":  fmt.Sprintf("Security scan for %s/%s: no critical issues detected (integrate Trivy for full CVE scanning)", namespace, releaseName),
+			"message": fmt.Sprintf(
+				"Security scan for %s/%s: no critical issues detected (integrate Trivy for full CVE scanning)",
+				namespace, releaseName,
+			),
 		})
 	}
 
@@ -441,24 +444,33 @@ func (h *Handler) RecommendOperator(ctx context.Context, req mcp.CallToolRequest
 
 	recommendations := map[string][]map[string]string{
 		"database": {
-			{"name": "CloudNativePG", "description": "PostgreSQL operator", "chart": "cloudnative-pg", "repo": "https://cloudnative-pg.io/charts"},
-			{"name": "MySQL Operator", "description": "MySQL/InnoDB cluster", "chart": "mysql-operator", "repo": "https://mysql.github.io/mysql-operator/"},
+			{"name": "CloudNativePG", "description": "PostgreSQL operator",
+				"chart": "cloudnative-pg", "repo": "https://cloudnative-pg.io/charts"},
+			{"name": "MySQL Operator", "description": "MySQL/InnoDB cluster",
+				"chart": "mysql-operator", "repo": "https://mysql.github.io/mysql-operator/"},
 		},
 		"messaging": {
-			{"name": "Strimzi", "description": "Apache Kafka operator", "chart": "strimzi-kafka-operator", "repo": "https://strimzi.io/charts/"},
-			{"name": "RabbitMQ Operator", "description": "RabbitMQ cluster operator", "chart": "rabbitmq-cluster-operator", "repo": "https://charts.bitnami.com/bitnami"},
+			{"name": "Strimzi", "description": "Apache Kafka operator",
+				"chart": "strimzi-kafka-operator", "repo": "https://strimzi.io/charts/"},
+			{"name": "RabbitMQ Operator", "description": "RabbitMQ cluster operator",
+				"chart": "rabbitmq-cluster-operator", "repo": "https://charts.bitnami.com/bitnami"},
 		},
 		"monitoring": {
-			{"name": "Prometheus Operator", "description": "Prometheus & Alertmanager operator", "chart": "kube-prometheus-stack", "repo": "https://prometheus-community.github.io/helm-charts"},
+			{"name": "Prometheus Operator", "description": "Prometheus & Alertmanager operator",
+				"chart": "kube-prometheus-stack", "repo": "https://prometheus-community.github.io/helm-charts"},
 		},
 		"storage": {
-			{"name": "Rook", "description": "Ceph storage operator", "chart": "rook-ceph", "repo": "https://charts.rook.io/release"},
+			{"name": "Rook", "description": "Ceph storage operator",
+				"chart": "rook-ceph", "repo": "https://charts.rook.io/release"},
 		},
 	}
 
 	recs, ok := recommendations[workloadType]
 	if !ok {
-		return toolText(fmt.Sprintf("No operator recommendations found for workload type %q. Try: database, messaging, monitoring, storage", workloadType)), nil
+		return toolText(fmt.Sprintf(
+			"No operator recommendations found for workload type %q. Try: database, messaging, monitoring, storage",
+			workloadType,
+		)), nil
 	}
 
 	return toolJSON(map[string]any{

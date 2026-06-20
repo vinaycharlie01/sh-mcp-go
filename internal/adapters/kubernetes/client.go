@@ -24,7 +24,10 @@ import (
 	"github.com/vinaycharlie01/sh-mcp-go/internal/ports/outbound"
 )
 
-const defaultStorageGB = 5
+const (
+	defaultStorageGB   = 5
+	rolloutTickInterval = 5 * time.Second
+)
 
 // Client implements outbound.KubernetesPort using the official Go SDK.
 // No kubectl is executed. All operations use client-go and controller-runtime APIs.
@@ -303,7 +306,7 @@ func (c *Client) GetResourceHealth(ctx context.Context, namespace, releaseName s
 // WaitForRollout waits until a workload is fully rolled out.
 func (c *Client) WaitForRollout(ctx context.Context, kind, name, namespace string, timeoutSecs int) error {
 	deadline := time.Now().Add(time.Duration(timeoutSecs) * time.Second)
-	ticker := time.NewTicker(5 * time.Second)
+	ticker := time.NewTicker(rolloutTickInterval)
 	defer ticker.Stop()
 
 	for {

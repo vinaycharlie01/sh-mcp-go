@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"time"
 
-	_ "modernc.org/sqlite"
+	_ "modernc.org/sqlite" // register sqlite driver
 
 	"github.com/vinaycharlie01/sh-mcp-go/internal/domain/deployment"
 )
@@ -123,7 +123,9 @@ func (r *Repository) FindByID(ctx context.Context, id deployment.ID) (*deploymen
 }
 
 // FindByReleaseName retrieves a deployment by release name and namespace.
-func (r *Repository) FindByReleaseName(ctx context.Context, name deployment.ReleaseName, ns deployment.Namespace) (*deployment.Deployment, error) {
+func (r *Repository) FindByReleaseName(
+	ctx context.Context, name deployment.ReleaseName, ns deployment.Namespace,
+) (*deployment.Deployment, error) {
 	row := r.db.QueryRowContext(ctx,
 		`SELECT id, release_name, namespace, chart_name, chart_repo, chart_version, chart_source,
 		        values_json, status, version, history_json, annotations_json, labels_json, created_at, updated_at

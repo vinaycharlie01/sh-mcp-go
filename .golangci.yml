@@ -54,6 +54,14 @@ linters-settings:
       - "make"
       - "fmt.Sprintf"
       - "float64"
+      - "float32"
+      - "v.SetDefault"
+      - "time.NewTicker"
+  revive:
+    rules:
+      - name: exported
+        arguments:
+          - "disableStutteringCheck"
 
 issues:
   exclude-rules:
@@ -66,3 +74,6 @@ issues:
     - path: "bootstrap"
       linters:
         - funlen
+    - text: "blank-imports"
+      linters:
+        - revive

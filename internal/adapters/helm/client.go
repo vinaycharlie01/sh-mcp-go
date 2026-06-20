@@ -13,13 +13,17 @@ import (
 	"helm.sh/helm/v3/pkg/chart/loader"
 	"helm.sh/helm/v3/pkg/cli"
 	"helm.sh/helm/v3/pkg/getter"
-	"helm.sh/helm/v3/pkg/registry"
 	"helm.sh/helm/v3/pkg/release"
 	"helm.sh/helm/v3/pkg/repo"
 
 	"github.com/vinaycharlie01/sh-mcp-go/internal/infrastructure/config"
 	"github.com/vinaycharlie01/sh-mcp-go/internal/infrastructure/retry"
 	"github.com/vinaycharlie01/sh-mcp-go/internal/ports/outbound"
+)
+
+const (
+	dirPerm  os.FileMode = 0o755
+	filePerm os.FileMode = 0o644
 )
 
 // Client implements outbound.HelmPort using the Helm SDK.
@@ -41,10 +45,10 @@ func NewClient(cfg *config.HelmConfig, logger *slog.Logger) (*Client, error) {
 		settings.PluginsDirectory = cfg.PluginsDir
 	}
 
-	if err := os.MkdirAll(cfg.RepositoryCache, 0755); err != nil {
+	if err := os.MkdirAll(cfg.RepositoryCache, dirPerm); err != nil {
 		return nil, fmt.Errorf("creating helm cache dir: %w", err)
 	}
-	if err := os.MkdirAll(filepath.Dir(cfg.RepositoryConfig), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(cfg.RepositoryConfig), dirPerm); err != nil {
 		return nil, fmt.Errorf("creating helm config dir: %w", err)
 	}
 
@@ -242,14 +246,15 @@ func (c *Client) ListReleases(ctx context.Context, namespace string) ([]*release
 }
 
 // GetHistory returns revision history for a release.
-func (c *Client) GetHistory(ctx context.Context, releaseName, namespace string, max int) ([]*release.Release, error) {
+func (c *Client) GetHistory(_ context.Context, releaseName, namespace string, maxRevisions int) ([]*release.Release, error) {
 	actionCfg, err := c.actionConfig(namespace)
 	if err != nil {
 		return nil, err
 	}
 
 	history := action.NewHistory(actionCfg)
-	history.Max = max
+	history.Max = maxRevisions
+
 	return history.Run(releaseName)
 }
 
@@ -388,11 +393,11 @@ func (c *Client) ensureRepo(name, url string) error {
 	}
 
 	f.Update(entry)
-	return f.WriteFile(c.settings.RepositoryConfig, 0644)
+	return f.WriteFile(c.settings.RepositoryConfig, filePerm)
 }
 
 // updateRepoIndex forces a refresh of the repo index.
-func (c *Client) updateRepoIndex(repoURL string) error {
+func (c *Client) updateRepoIndex(_ string) error {
 	return nil // index is lazily downloaded by LocateChart
 }
 
@@ -405,7 +410,3 @@ func (c *Client) loadRepoIndex(_ string) (*repo.IndexFile, error) {
 	return repo.LoadIndexFile(files[0])
 }
 
-// newRegistryClient builds an OCI registry client for OCI-hosted charts.
-func newRegistryClient() (*registry.Client, error) {
-	return registry.NewClient()
-}

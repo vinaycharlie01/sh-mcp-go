@@ -58,13 +58,14 @@ func NewServer(
 }
 
 // ServeStdio runs the MCP server over stdin/stdout (standard MCP transport).
-func (s *Server) ServeStdio(ctx context.Context) error {
+func (s *Server) ServeStdio(_ context.Context) error {
 	s.logger.Info("starting MCP server (stdio transport)")
+
 	return server.ServeStdio(s.mcp)
 }
 
 // ServeSSE runs the MCP server as an SSE HTTP endpoint.
-func (s *Server) ServeSSE(ctx context.Context) error {
+func (s *Server) ServeSSE(_ context.Context) error {
 	addr := s.cfg.SSEAddr
 	if addr == "" {
 		addr = "0.0.0.0:8081"
@@ -210,8 +211,12 @@ func toolDeleteOperator() mcp.Tool {
 
 func toolPlanDeployment() mcp.Tool {
 	return mcp.NewTool("plan_deployment",
-		mcp.WithDescription("Generate an AI deployment plan from natural language intent. Returns an ordered list of steps with dependency graph."),
-		mcp.WithString("intent", mcp.Required(), mcp.Description("Natural language deployment intent, e.g. 'Deploy Prometheus and Grafana with persistence'")),
+		mcp.WithDescription(
+			"Generate an AI deployment plan from natural language intent. Returns an ordered list of steps with dependency graph.",
+		),
+		mcp.WithString("intent", mcp.Required(), mcp.Description(
+			"Natural language deployment intent, e.g. 'Deploy Prometheus and Grafana with persistence'",
+		)),
 		mcp.WithString("namespace", mcp.Description("Target namespace (default: default)")),
 	)
 }

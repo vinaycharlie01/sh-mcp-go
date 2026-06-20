@@ -84,41 +84,42 @@ func (s *HTTPServer) Start(ctx context.Context) error {
 
 	select {
 	case <-ctx.Done():
-		return s.shutdown()
+		return s.shutdown(ctx)
 	case err := <-errCh:
 		return err
 	}
 }
 
 // shutdown gracefully stops the server.
-func (s *HTTPServer) shutdown() error {
-	ctx, cancel := context.WithTimeout(context.Background(), s.cfg.ShutdownTimeout)
+func (s *HTTPServer) shutdown(parentCtx context.Context) error {
+	ctx, cancel := context.WithTimeout(parentCtx, s.cfg.ShutdownTimeout)
 	defer cancel()
 	s.logger.Info("HTTP server shutting down")
+
 	return s.srv.Shutdown(ctx)
 }
 
 // --- Handlers ---
 
-func healthz(w http.ResponseWriter, r *http.Request) {
+func healthz(w http.ResponseWriter, _ *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	_ = json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
 }
 
-func readyz(w http.ResponseWriter, r *http.Request) {
+func readyz(w http.ResponseWriter, _ *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	_ = json.NewEncoder(w).Encode(map[string]string{"status": "ready"})
 }
 
-func livez(w http.ResponseWriter, r *http.Request) {
+func livez(w http.ResponseWriter, _ *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	_ = json.NewEncoder(w).Encode(map[string]string{"status": "alive"})
 }
 
-func versionHandler(w http.ResponseWriter, r *http.Request) {
+func versionHandler(w http.ResponseWriter, _ *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(version.Get())
 }
@@ -147,10 +148,11 @@ func requestLoggerMiddleware(logger *slog.Logger) func(http.Handler) http.Handle
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			start := time.Now()
+			ctx := r.Context()
 			ww := middleware.NewWrapResponseWriter(w, r.ProtoMajor)
 
 			defer func() {
-				log := pkglogger.FromContext(r.Context(), logger)
+				log := pkglogger.FromContext(ctx, logger)
 				log.Info("http request",
 					slog.String("method", r.Method),
 					slog.String("path", r.URL.Path),

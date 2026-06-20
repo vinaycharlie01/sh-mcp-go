@@ -10,15 +10,15 @@ import (
 type Status string
 
 const (
-	StatusPending    Status = "PENDING"
-	StatusPlanning   Status = "PLANNING"
-	StatusValidating Status = "VALIDATING"
-	StatusDeploying  Status = "DEPLOYING"
-	StatusSucceeded  Status = "SUCCEEDED"
-	StatusFailed     Status = "FAILED"
+	StatusPending     Status = "PENDING"
+	StatusPlanning    Status = "PLANNING"
+	StatusValidating  Status = "VALIDATING"
+	StatusDeploying   Status = "DEPLOYING"
+	StatusSucceeded   Status = "SUCCEEDED"
+	StatusFailed      Status = "FAILED"
 	StatusRollingBack Status = "ROLLING_BACK"
-	StatusRolledBack Status = "ROLLED_BACK"
-	StatusUpgrading  Status = "UPGRADING"
+	StatusRolledBack  Status = "ROLLED_BACK"
+	StatusUpgrading   Status = "UPGRADING"
 	StatusUninstalled Status = "UNINSTALLED"
 )
 
@@ -146,6 +146,7 @@ func (d *Deployment) MarkFailed(reason string) error {
 	d.status = StatusFailed
 	d.updatedAt = time.Now().UTC()
 	d.record(NewDeploymentFailedEvent(d.id, d.name, d.namespace, reason))
+
 	return nil
 }
 
@@ -159,6 +160,7 @@ func (d *Deployment) StartUpgrade(newChart ChartReference, newValues Values) err
 	d.status = StatusUpgrading
 	d.updatedAt = time.Now().UTC()
 	d.record(NewDeploymentUpgradeStartedEvent(d.id, d.name, d.namespace, newChart))
+
 	return nil
 }
 
@@ -170,6 +172,7 @@ func (d *Deployment) StartRollback(toVersion int) error {
 	d.status = StatusRollingBack
 	d.updatedAt = time.Now().UTC()
 	d.record(NewDeploymentRollbackStartedEvent(d.id, d.name, d.namespace, toVersion))
+
 	return nil
 }
 

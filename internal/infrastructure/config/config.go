@@ -7,15 +7,15 @@ import (
 
 // Config is the root application configuration.
 type Config struct {
-	Server      ServerConfig      `mapstructure:"server"      validate:"required"`
-	Kubernetes  KubernetesConfig  `mapstructure:"kubernetes"`
-	Helm        HelmConfig        `mapstructure:"helm"        validate:"required"`
-	Storage     StorageConfig     `mapstructure:"storage"     validate:"required"`
+	Server        ServerConfig        `mapstructure:"server"      validate:"required"`
+	Kubernetes    KubernetesConfig    `mapstructure:"kubernetes"`
+	Helm          HelmConfig          `mapstructure:"helm"        validate:"required"`
+	Storage       StorageConfig       `mapstructure:"storage"     validate:"required"`
 	Observability ObservabilityConfig `mapstructure:"observability"`
-	Security    SecurityConfig    `mapstructure:"security"`
-	MCP         MCPConfig         `mapstructure:"mcp"         validate:"required"`
-	Log         LogConfig         `mapstructure:"log"`
-	Version     string            `mapstructure:"version"`
+	Security      SecurityConfig      `mapstructure:"security"`
+	MCP           MCPConfig           `mapstructure:"mcp"         validate:"required"`
+	Log           LogConfig           `mapstructure:"log"`
+	Version       string              `mapstructure:"version"`
 }
 
 // ServerConfig controls the HTTP server.
@@ -77,19 +77,19 @@ type PostgresConfig struct {
 
 // ObservabilityConfig controls telemetry.
 type ObservabilityConfig struct {
-	MetricsEnabled bool   `mapstructure:"metrics_enabled"`
-	TracingEnabled bool   `mapstructure:"tracing_enabled"`
-	OTLPEndpoint   string `mapstructure:"otlp_endpoint"`
-	ServiceName    string `mapstructure:"service_name"`
+	MetricsEnabled bool    `mapstructure:"metrics_enabled"`
+	TracingEnabled bool    `mapstructure:"tracing_enabled"`
+	OTLPEndpoint   string  `mapstructure:"otlp_endpoint"`
+	ServiceName    string  `mapstructure:"service_name"`
 	SamplingRate   float64 `mapstructure:"sampling_rate"`
 }
 
 // SecurityConfig controls security behaviour.
 type SecurityConfig struct {
-	EnableRBACValidation bool     `mapstructure:"enable_rbac_validation"`
-	EnableSecretMasking  bool     `mapstructure:"enable_secret_masking"`
-	AllowedNamespaces    []string `mapstructure:"allowed_namespaces"`
-	DeniedNamespaces     []string `mapstructure:"denied_namespaces"`
+	EnableRBACValidation bool              `mapstructure:"enable_rbac_validation"`
+	EnableSecretMasking  bool              `mapstructure:"enable_secret_masking"`
+	AllowedNamespaces    []string          `mapstructure:"allowed_namespaces"`
+	DeniedNamespaces     []string          `mapstructure:"denied_namespaces"`
 	RequiredLabels       map[string]string `mapstructure:"required_labels"`
 }
 

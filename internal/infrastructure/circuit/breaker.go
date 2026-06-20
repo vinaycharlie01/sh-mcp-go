@@ -87,9 +87,11 @@ func gbState(s gobreaker.State) State {
 		return StateHalfOpen
 	case gobreaker.StateOpen:
 		return StateOpen
-	default:
+	case gobreaker.StateClosed:
 		return StateClosed
 	}
+
+	return StateClosed
 }
 
 const (

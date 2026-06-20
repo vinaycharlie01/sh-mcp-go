@@ -230,13 +230,16 @@ func (s *Service) buildRollbackPlan(intent *Intent) *DeploymentPlan {
 func (s *Service) parseIntent(intent, namespace string) (*Intent, error) {
 	lower := strings.ToLower(intent)
 
-	action := "install"
-	if strings.Contains(lower, "upgrade") || strings.Contains(lower, "update") {
+	var action string
+	switch {
+	case strings.Contains(lower, "upgrade") || strings.Contains(lower, "update"):
 		action = "upgrade"
-	} else if strings.Contains(lower, "rollback") || strings.Contains(lower, "revert") {
+	case strings.Contains(lower, "rollback") || strings.Contains(lower, "revert"):
 		action = "rollback"
-	} else if strings.Contains(lower, "uninstall") || strings.Contains(lower, "remove") || strings.Contains(lower, "delete") {
+	case strings.Contains(lower, "uninstall") || strings.Contains(lower, "remove") || strings.Contains(lower, "delete"):
 		action = "uninstall"
+	default:
+		action = "install"
 	}
 
 	ns := namespace

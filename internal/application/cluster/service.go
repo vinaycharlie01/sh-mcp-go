@@ -108,7 +108,11 @@ func rrca(h cluster.ResourceHealth) string {
 		return "Check pod events with kubectl describe; consider increasing replica count or resource limits"
 	case cluster.HealthStatusUnhealthy:
 		return "Pod is crash-looping or OOMKilled; review logs and adjust memory limits"
-	default:
+	case cluster.HealthStatusHealthy:
+		return "Resource is healthy; no action required"
+	case cluster.HealthStatusUnknown:
 		return "Status unknown; check cluster connectivity and node health"
 	}
+
+	return "Status unknown; check cluster connectivity and node health"
 }

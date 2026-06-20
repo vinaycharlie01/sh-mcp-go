@@ -72,7 +72,6 @@ type Plan struct {
 	rollbackPlan *Plan
 	createdAt    time.Time
 	updatedAt    time.Time
-	estimatedAt  *time.Duration
 	deploymentID *deployment.ID
 }
 
@@ -134,6 +133,8 @@ func (p *Plan) UpdateStepStatus(stepID string, status StepStatus, errMsg string)
 			p.steps[i].Error = errMsg
 			now := time.Now().UTC()
 			switch status {
+			case StepStatusPending:
+				// no-op: pending steps have no timestamps
 			case StepStatusRunning:
 				p.steps[i].StartedAt = &now
 			case StepStatusSucceeded, StepStatusFailed, StepStatusSkipped:
