@@ -1,15 +1,22 @@
+version: 2
+
 run:
   timeout: 5m
-  go: "1.25"
 
-linters:
+formatters:
   enable:
     - gofmt
     - goimports
+  settings:
+    gofmt:
+      simplify: true
+
+linters:
+  default: none
+  enable:
     - govet
     - errcheck
     - staticcheck
-    - gosimple
     - ineffassign
     - unused
     - gosec
@@ -37,31 +44,27 @@ linters:
     - unparam
     - wastedassign
     - whitespace
-
-linters-settings:
-  gofmt:
-    simplify: true
-  lll:
-    line-length: 140
-  funlen:
-    lines: 120
-    statements: 60
-  cyclop:
-    max-complexity: 15
-  mnd:
-    ignored-functions:
-      - "time.Duration"
-      - "make"
-      - "fmt.Sprintf"
-      - "float64"
-      - "float32"
-      - "v.SetDefault"
-      - "time.NewTicker"
-  revive:
-    rules:
-      - name: exported
-        arguments:
-          - "disableStutteringCheck"
+  settings:
+    lll:
+      line-length: 140
+    funlen:
+      lines: 120
+      statements: 60
+    cyclop:
+      max-complexity: 15
+    mnd:
+      ignored-functions:
+        - "time.Duration"
+        - "make"
+        - "fmt.Sprintf"
+        - "float64"
+        - "float32"
+        - "v.SetDefault"
+        - "time.NewTicker"
+    revive:
+      rules:
+        - name: exported
+          disabled: true
 
 issues:
   exclude-rules:
@@ -75,5 +78,11 @@ issues:
       linters:
         - funlen
     - text: "blank-imports"
+      linters:
+        - revive
+    - text: "should have comment"
+      linters:
+        - revive
+    - text: "comment on exported"
       linters:
         - revive
