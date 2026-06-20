@@ -1,0 +1,33 @@
+---
+run:
+  timeout: 5m
+  go: "1.25"
+  # Use at most 2 CPUs during linting for runner stability
+  concurrency: 2
+
+linters:
+  disable-all: true
+  enable:
+    # Essential linters for code quality
+    - errcheck      # Checks for unchecked errors
+    - gofmt         # Checks if code is formatted with gofmt
+    - goimports     # Checks for unused imports
+    - govet         # Reports likely mistakes in packages
+    - staticcheck   # Go vet on steroids
+    - ineffassign   # Detects when assignments to existing variables are not used
+    - unused        # Checks for unused constants, variables, functions, and types
+    - gosimple      # Suggests simplifications
+    - typecheck     # Parses and type-checks Go code
+
+linters-settings:
+  gofmt:
+    simplify: true
+  goimports:
+    local-prefixes: github.com/vinaycharlie01/sh-mcp-go
+
+issues:
+  # Exclude some linters from being run on test files
+  exclude-rules:
+    - path: _test\.go
+      linters:
+        - typecheck
