@@ -151,18 +151,10 @@ jobs:
         with:
           go-version: ${{ env.GO_VERSION }}
           cache: true
+      - name: Install mage
+        run: go install github.com/magefile/mage@latest
       - name: Build binary
-        run: |
-          VERSION=$(git describe --tags --always --dirty)
-          COMMIT=$(git rev-parse --short HEAD)
-          BUILD_DATE=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-          go build \
-            -ldflags="-s -w \
-              -X github.com/vinaycharlie01/sh-mcp-go/pkg/version.Version=${VERSION} \
-              -X github.com/vinaycharlie01/sh-mcp-go/pkg/version.Commit=${COMMIT} \
-              -X github.com/vinaycharlie01/sh-mcp-go/pkg/version.BuildDate=${BUILD_DATE}" \
-            -o dist/sh-mcp-go \
-            ./cmd/sh-mcp-go/...
+        run: mage build
       - name: Upload binary
         uses: actions/upload-artifact@v4
         with:
@@ -229,10 +221,9 @@ jobs:
         with:
           go-version: ${{ env.GO_VERSION }}
           cache: true
-      - name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@v6
-        with:
-          version: latest
-          args: release --clean
+      - name: Install mage
+        run: go install github.com/magefile/mage@latest
+      - name: Release
+        run: mage release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

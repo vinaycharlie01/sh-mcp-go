@@ -1,0 +1,23 @@
+binary:
+  name: sh-mcp-go
+  main: ./cmd/sh-mcp-go
+  output_dir: dist
+  cgo_enabled: false
+  version_pkg: github.com/vinaycharlie01/sh-mcp-go/pkg/version
+  platforms:
+    - {os: linux,   arch: amd64}
+    - {os: linux,   arch: arm64}
+    - {os: darwin,  arch: amd64}
+    - {os: darwin,  arch: arm64}
+    - {os: windows, arch: amd64}
+
+docker:
+  image: ghcr.io/vinaycharlie01/sh-mcp-go
+  dockerfile: Dockerfile
+  platforms:
+    - linux/amd64
+    - linux/arm64
+
+release:
+  tool: goreleaser
+  config: .goreleaser.yaml
