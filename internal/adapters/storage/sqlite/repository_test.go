@@ -15,7 +15,7 @@ func newTestRepo(t *testing.T) (*sqlite.Repository, func()) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "test.db")
 
-	repo, err := sqlite.NewRepository(path)
+	repo, err := sqlite.NewRepository(context.Background(), path)
 	if err != nil {
 		t.Fatalf("NewRepository: %v", err)
 	}
