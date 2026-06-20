@@ -49,7 +49,7 @@ func Build(ctx context.Context, cfg *config.Config) (*App, error) {
 	}
 
 	// Storage
-	storage, err := sqliterepo.NewRepository(cfg.Storage.SQLite.Path)
+	storage, err := sqliterepo.NewRepository(ctx, cfg.Storage.SQLite.Path)
 	if err != nil {
 		return nil, fmt.Errorf("initializing storage: %w", err)
 	}

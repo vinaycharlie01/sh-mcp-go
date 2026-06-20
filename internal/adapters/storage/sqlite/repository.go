@@ -41,7 +41,7 @@ type Repository struct {
 }
 
 // NewRepository opens a SQLite database and applies the schema.
-func NewRepository(path string) (*Repository, error) {
+func NewRepository(ctx context.Context, path string) (*Repository, error) {
 	db, err := sql.Open("sqlite", path)
 	if err != nil {
 		return nil, fmt.Errorf("opening sqlite: %w", err)
@@ -50,7 +50,7 @@ func NewRepository(path string) (*Repository, error) {
 	db.SetMaxOpenConns(1) // SQLite is single-writer
 	db.SetMaxIdleConns(1)
 
-	if _, err := db.ExecContext(context.Background(), schema); err != nil {
+	if _, err := db.ExecContext(ctx, schema); err != nil {
 		return nil, fmt.Errorf("applying schema: %w", err)
 	}
 
