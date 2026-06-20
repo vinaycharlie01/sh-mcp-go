@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "sh-mcp-go": {
+      "command": "/usr/local/bin/sh-mcp-go",
+      "args": [],
+      "env": {
+        "KUBECONFIG": "/home/user/.kube/config",
+        "SHMCP_LOG_LEVEL": "info",
+        "SHMCP_LOG_FORMAT": "json",
+        "SHMCP_MCP_TRANSPORT": "stdio"
+      }
+    }
+  }
+}
