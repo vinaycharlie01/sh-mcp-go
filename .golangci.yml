@@ -65,24 +65,3 @@ linters:
       rules:
         - name: exported
           disabled: true
-
-exclusions:
-  rules:
-    - path: "_test\\.go"
-      linters:
-        - funlen
-        - mnd
-        - dupl
-        - lll
-    - path: "bootstrap"
-      linters:
-        - funlen
-    - text: "blank-imports"
-      linters:
-        - revive
-    - text: "should have comment"
-      linters:
-        - revive
-    - text: "comment on exported"
-      linters:
-        - revive
