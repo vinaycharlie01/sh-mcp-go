@@ -50,7 +50,7 @@ func NewRepository(path string) (*Repository, error) {
 	db.SetMaxOpenConns(1) // SQLite is single-writer
 	db.SetMaxIdleConns(1)
 
-	if _, err := db.Exec(schema); err != nil {
+	if _, err := db.ExecContext(context.Background(), schema); err != nil {
 		return nil, fmt.Errorf("applying schema: %w", err)
 	}
 
@@ -145,7 +145,7 @@ func (r *Repository) ListByNamespace(ctx context.Context, ns deployment.Namespac
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	return scanDeployments(rows)
 }
@@ -159,7 +159,7 @@ func (r *Repository) ListByStatus(ctx context.Context, status deployment.Status)
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	return scanDeployments(rows)
 }
