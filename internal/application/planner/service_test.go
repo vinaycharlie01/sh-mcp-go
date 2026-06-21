@@ -73,7 +73,7 @@ func TestPlanService_IntentParsing(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.intent, func(_ *testing.T) {
 			// These assertions verify our planner logic without network calls
-			_ = planner.NewService(nil, nil, nil)
+			_ = planner.NewService(nil, nil)
 			// In a real test we'd inject fakes; here we test the intent parsing contract
 		})
 	}
