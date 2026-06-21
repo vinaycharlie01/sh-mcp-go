@@ -14,6 +14,26 @@ test:
     - "-short"
     - "-timeout=120s"
 
+race:
+  packages:
+    - ./...
+  args:
+    - "-short"
+    - "-timeout=120s"
+
+coverage:
+  packages:
+    - ./...
+  output: coverage.out
+  args:
+    - "-timeout=120s"
+
+bench:
+  packages:
+    - ./...
+  args:
+    - "-timeout=120s"
+
 lint:
   args:
     - "--timeout=10m"

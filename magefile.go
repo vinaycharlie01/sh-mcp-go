@@ -53,7 +53,6 @@ func Build() error {
 	cmd.Env = append(os.Environ(), "CGO_ENABLED=0")
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-
 	return cmd.Run()
 }
 
@@ -63,11 +62,45 @@ func Test() error { return gomagex.Test() }
 // Lint runs golangci-lint (config: go.yaml → lint).
 func Lint() error { return gomagex.Lint() }
 
-// Vet runs go vet.
+// Vet runs go vet (config: go.yaml → vet).
 func Vet() error { return gomagex.Vet() }
 
 // Setup downloads Go modules (config: go.yaml → setup).
 func Setup() error { return gomagex.Setup() }
+
+// Race runs tests with race detection.
+func Race() error {
+	cmd := exec.Command("go", "test", "-race", "./...", "-short", "-timeout=120s")
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	return cmd.Run()
+}
+
+// Coverage runs tests with coverage profiling and writes coverage.out.
+func Coverage() error {
+	cmd := exec.Command("go", "test", "./...",
+		"-coverprofile=coverage.out", "-covermode=atomic", "-timeout=120s")
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	return cmd.Run()
+}
+
+// Bench runs benchmarks.
+func Bench() error {
+	cmd := exec.Command("go", "test", "./...",
+		"-bench=.", "-benchmem", "-run=^$", "-timeout=120s")
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	return cmd.Run()
+}
+
+// Govulncheck runs govulncheck for vulnerability scanning.
+func Govulncheck() error {
+	cmd := exec.Command("govulncheck", "./...")
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	return cmd.Run()
+}
 
 // BuildLinux cross-compiles for linux/amd64 and linux/arm64 (used by Docker multi-platform builds).
 func BuildLinux() error {
@@ -97,7 +130,6 @@ func BuildLinux() error {
 			return fmt.Errorf("build linux/%s: %w", arch, err)
 		}
 	}
-
 	return nil
 }
 
@@ -128,6 +160,5 @@ func Release() error {
 	cmd := exec.Command("goreleaser", "release", "--clean", "--config", ".goreleaser.yaml")
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-
 	return cmd.Run()
 }
