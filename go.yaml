@@ -5,6 +5,19 @@ setup:
 build:
   output: dist/sh-mcp-go
   main: ./cmd/sh-mcp-go
+  versionPkg: github.com/vinaycharlie01/sh-mcp-go/pkg/version
+  noCGO: true
+
+crossBuild:
+  main: ./cmd/sh-mcp-go
+  binary: sh-mcp-go
+  outputDir: dist
+  versionPkg: github.com/vinaycharlie01/sh-mcp-go/pkg/version
+  platforms:
+    - os: linux
+      arch: amd64
+    - os: linux
+      arch: arm64
 
 test:
   packages:
@@ -37,3 +50,7 @@ bench:
 lint:
   args:
     - "--timeout=10m"
+
+vet:
+  packages:
+    - ./...
