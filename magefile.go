@@ -15,17 +15,12 @@ package main
 import (
 	"fmt"
 	"os"
-	"os/exec"
-	"time"
 
 	"github.com/magefile/mage/mg"
 	dockermagex "github.com/nirantaraai/nava/mage/docker"
-	gitmagex "github.com/nirantaraai/nava/mage/git"
 	gomagex "github.com/nirantaraai/nava/mage/golang"
 	goreleasermagex "github.com/nirantaraai/nava/mage/goreleaser"
 )
-
-const versionPkg = "github.com/vinaycharlie01/sh-mcp-go/pkg/version"
 
 // init loads all YAML configs once before any target runs.
 func init() {
@@ -36,26 +31,8 @@ func init() {
 
 // ---- Go targets --------------------------------------------------------
 
-// Build compiles sh-mcp-go for the current platform with git version ldflags.
-func Build() error {
-	version, _ := gitmagex.GetVersion()
-	commit, _ := gitmagex.GetShortCommitSHA()
-	date := time.Now().UTC().Format(time.RFC3339)
-
-	ldf := fmt.Sprintf("-s -w -X %s.Version=%s -X %s.Commit=%s -X %s.BuildDate=%s",
-		versionPkg, version, versionPkg, commit, versionPkg, date,
-	)
-
-	if err := os.MkdirAll("dist", 0o755); err != nil {
-		return err
-	}
-
-	cmd := exec.Command("go", "build", "-ldflags", ldf, "-o", "dist/sh-mcp-go", "./cmd/sh-mcp-go")
-	cmd.Env = append(os.Environ(), "CGO_ENABLED=0")
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	return cmd.Run()
-}
+// Build compiles sh-mcp-go for the current platform (config: go.yaml → build).
+func Build() error { return gomagex.Build() }
 
 // Test runs the unit test suite (config: go.yaml → test).
 func Test() error { return gomagex.Test() }

@@ -5,6 +5,8 @@ setup:
 build:
   output: dist/sh-mcp-go
   main: ./cmd/sh-mcp-go
+  versionPkg: github.com/vinaycharlie01/sh-mcp-go/pkg/version
+  noCGO: true
 
 crossBuild:
   main: ./cmd/sh-mcp-go
