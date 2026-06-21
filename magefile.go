@@ -16,13 +16,13 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"time"
 
 	"github.com/magefile/mage/mg"
 	dockermagex "github.com/nirantaraai/nava/mage/docker"
 	gitmagex "github.com/nirantaraai/nava/mage/git"
 	gomagex "github.com/nirantaraai/nava/mage/golang"
+	goreleasermagex "github.com/nirantaraai/nava/mage/goreleaser"
 )
 
 const versionPkg = "github.com/vinaycharlie01/sh-mcp-go/pkg/version"
@@ -31,6 +31,7 @@ const versionPkg = "github.com/vinaycharlie01/sh-mcp-go/pkg/version"
 func init() {
 	_ = gomagex.LoadConfig("go.yaml")
 	_ = dockermagex.LoadConfig("docker.yaml")
+	_ = goreleasermagex.LoadConfig("goreleaser.yaml")
 }
 
 // ---- Go targets --------------------------------------------------------
@@ -80,36 +81,8 @@ func Bench() error { return gomagex.Bench() }
 // Govulncheck runs govulncheck for vulnerability scanning (config: go.yaml → govulncheck).
 func Govulncheck() error { return gomagex.Govulncheck() }
 
-// BuildLinux cross-compiles for linux/amd64 and linux/arm64 (used by Docker multi-platform builds).
-func BuildLinux() error {
-	version, _ := gitmagex.GetVersion()
-	commit, _ := gitmagex.GetShortCommitSHA()
-	date := time.Now().UTC().Format(time.RFC3339)
-
-	ldf := fmt.Sprintf("-s -w -X %s.Version=%s -X %s.Commit=%s -X %s.BuildDate=%s",
-		versionPkg, version, versionPkg, commit, versionPkg, date,
-	)
-
-	for _, arch := range []string{"amd64", "arm64"} {
-		outDir := filepath.Join("dist", "linux_"+arch)
-		if err := os.MkdirAll(outDir, 0o755); err != nil {
-			return err
-		}
-
-		out := filepath.Join(outDir, "sh-mcp-go")
-		fmt.Printf("building linux/%s → %s\n", arch, out)
-
-		cmd := exec.Command("go", "build", "-ldflags", ldf, "-o", out, "./cmd/sh-mcp-go")
-		cmd.Env = append(os.Environ(), "CGO_ENABLED=0", "GOOS=linux", "GOARCH="+arch)
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
-
-		if err := cmd.Run(); err != nil {
-			return fmt.Errorf("build linux/%s: %w", arch, err)
-		}
-	}
-	return nil
-}
+// BuildLinux cross-compiles for linux/amd64 and linux/arm64 (config: go.yaml → crossBuild).
+func BuildLinux() error { return gomagex.CrossBuild() }
 
 // Clean removes build artefacts.
 func Clean() error {
@@ -133,10 +106,8 @@ func (Docker) Login() error { return dockermagex.Login() }
 
 // ---- Release target ----------------------------------------------------
 
-// Release creates a GitHub release via goreleaser.
-func Release() error {
-	cmd := exec.Command("goreleaser", "release", "--clean", "--config", ".goreleaser.yaml")
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	return cmd.Run()
-}
+// Release creates a GitHub release via goreleaser (config: goreleaser.yaml).
+func Release() error { return goreleasermagex.Release() }
+
+// Snapshot creates a local snapshot build without publishing (config: goreleaser.yaml).
+func Snapshot() error { return goreleasermagex.Snapshot() }
