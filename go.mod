@@ -12,7 +12,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/magefile/mage v1.17.2
 	github.com/mark3labs/mcp-go v0.32.0
-	github.com/nirantaraai/nava v0.0.0-20260621085507-0bb1d7e19f44
+	github.com/nirantaraai/nava v0.0.0-20260621090652-f90eb53980f2
 	github.com/prometheus/client_golang v1.23.2
 	github.com/sony/gobreaker v1.0.0
 	github.com/spf13/viper v1.19.0
