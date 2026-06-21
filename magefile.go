@@ -68,39 +68,17 @@ func Vet() error { return gomagex.Vet() }
 // Setup downloads Go modules (config: go.yaml → setup).
 func Setup() error { return gomagex.Setup() }
 
-// Race runs tests with race detection.
-func Race() error {
-	cmd := exec.Command("go", "test", "-race", "./...", "-short", "-timeout=120s")
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	return cmd.Run()
-}
+// Race runs tests with race detection (config: go.yaml → race).
+func Race() error { return gomagex.Race() }
 
-// Coverage runs tests with coverage profiling and writes coverage.out.
-func Coverage() error {
-	cmd := exec.Command("go", "test", "./...",
-		"-coverprofile=coverage.out", "-covermode=atomic", "-timeout=120s")
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	return cmd.Run()
-}
+// Coverage runs tests with coverage profiling (config: go.yaml → coverage).
+func Coverage() error { return gomagex.Coverage() }
 
-// Bench runs benchmarks.
-func Bench() error {
-	cmd := exec.Command("go", "test", "./...",
-		"-bench=.", "-benchmem", "-run=^$", "-timeout=120s")
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	return cmd.Run()
-}
+// Bench runs benchmarks (config: go.yaml → bench).
+func Bench() error { return gomagex.Bench() }
 
-// Govulncheck runs govulncheck for vulnerability scanning.
-func Govulncheck() error {
-	cmd := exec.Command("govulncheck", "./...")
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	return cmd.Run()
-}
+// Govulncheck runs govulncheck for vulnerability scanning (config: go.yaml → govulncheck).
+func Govulncheck() error { return gomagex.Govulncheck() }
 
 // BuildLinux cross-compiles for linux/amd64 and linux/arm64 (used by Docker multi-platform builds).
 func BuildLinux() error {

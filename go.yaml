@@ -37,3 +37,7 @@ bench:
 lint:
   args:
     - "--timeout=10m"
+
+vet:
+  packages:
+    - ./...
