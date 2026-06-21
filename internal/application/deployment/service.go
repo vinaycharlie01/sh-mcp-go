@@ -12,11 +12,10 @@ import (
 // Service orchestrates chart install/upgrade/rollback/uninstall workflows.
 // It coordinates the Helm port, Kubernetes port, storage, and domain aggregates.
 type Service struct {
-	helm   outbound.HelmPort
-	k8s    outbound.KubernetesPort
-	store  outbound.DeploymentStore
-	pub    deployment.EventPublisher
-	logger *slog.Logger
+	helm  outbound.HelmPort
+	k8s   outbound.KubernetesPort
+	store outbound.DeploymentStore
+	pub   deployment.EventPublisher
 }
 
 // NewService constructs the deployment application service.
@@ -25,25 +24,22 @@ func NewService(
 	k8s outbound.KubernetesPort,
 	store outbound.DeploymentStore,
 	pub deployment.EventPublisher,
-	logger *slog.Logger,
 ) *Service {
 	return &Service{
-		helm:   helm,
-		k8s:    k8s,
-		store:  store,
-		pub:    pub,
-		logger: logger,
+		helm:  helm,
+		k8s:   k8s,
+		store: store,
+		pub:   pub,
 	}
 }
 
 // InstallChart installs a Helm chart onto the cluster.
 func (s *Service) InstallChart(ctx context.Context, cmd InstallChartCommand) (*InstallChartResult, error) {
-	log := s.logger.With(
+	slog.Info("install chart command received",
 		slog.String("release", cmd.ReleaseName),
 		slog.String("namespace", cmd.Namespace),
 		slog.String("chart", cmd.ChartName),
 	)
-	log.Info("install chart command received")
 
 	// Build domain aggregate
 	chartRef := deployment.ChartReference{
@@ -120,7 +116,7 @@ func (s *Service) InstallChart(ctx context.Context, cmd InstallChartCommand) (*I
 		notes = rel.Info.Notes
 	}
 
-	log.Info("chart installed successfully", slog.Int("revision", rel.Version))
+	slog.Info("chart installed successfully", slog.Int("revision", rel.Version))
 
 	return &InstallChartResult{
 		DeploymentID: agg.ID().String(),
@@ -134,11 +130,10 @@ func (s *Service) InstallChart(ctx context.Context, cmd InstallChartCommand) (*I
 
 // UpgradeChart upgrades an existing Helm release.
 func (s *Service) UpgradeChart(ctx context.Context, cmd UpgradeChartCommand) (*UpgradeChartResult, error) {
-	log := s.logger.With(
+	slog.Info("upgrade chart command received",
 		slog.String("release", cmd.ReleaseName),
 		slog.String("namespace", cmd.Namespace),
 	)
-	log.Info("upgrade chart command received")
 
 	// Find existing deployment
 	agg, err := s.store.FindByReleaseName(ctx,
@@ -198,7 +193,7 @@ func (s *Service) UpgradeChart(ctx context.Context, cmd UpgradeChartCommand) (*U
 		notes = rel.Info.Notes
 	}
 
-	log.Info("chart upgraded", slog.Int("revision", rel.Version))
+	slog.Info("chart upgraded", slog.Int("revision", rel.Version))
 
 	return &UpgradeChartResult{
 		DeploymentID: agg.ID().String(),
@@ -212,7 +207,7 @@ func (s *Service) UpgradeChart(ctx context.Context, cmd UpgradeChartCommand) (*U
 
 // RollbackChart rolls back a Helm release.
 func (s *Service) RollbackChart(ctx context.Context, cmd RollbackChartCommand) error {
-	s.logger.Info("rollback chart",
+	slog.Info("rollback chart",
 		slog.String("release", cmd.ReleaseName),
 		slog.Int("version", cmd.Version),
 	)
@@ -258,7 +253,7 @@ func (s *Service) RollbackChart(ctx context.Context, cmd RollbackChartCommand) e
 
 // UninstallChart removes a Helm release.
 func (s *Service) UninstallChart(ctx context.Context, cmd UninstallChartCommand) error {
-	s.logger.Info("uninstall chart", slog.String("release", cmd.ReleaseName))
+	slog.Info("uninstall chart", slog.String("release", cmd.ReleaseName))
 
 	if err := s.helm.Uninstall(ctx, outbound.HelmUninstallRequest{
 		ReleaseName: cmd.ReleaseName,
@@ -285,7 +280,7 @@ func (s *Service) publishEvents(ctx context.Context, agg *deployment.Deployment)
 	events := agg.DrainEvents()
 	if s.pub != nil && len(events) > 0 {
 		if err := s.pub.Publish(ctx, events); err != nil {
-			s.logger.Warn("publishing domain events failed", slog.String("error", err.Error()))
+			slog.Warn("publishing domain events failed", slog.String("error", err.Error()))
 		}
 	}
 }

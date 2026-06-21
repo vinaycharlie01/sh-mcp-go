@@ -31,13 +31,12 @@ const (
 type Client struct {
 	cfg         *config.HelmConfig
 	settings    *cli.EnvSettings
-	logger      *slog.Logger
 	retryPolicy retry.Policy
 	getters     getter.Providers
 }
 
 // NewClient constructs a Helm SDK client.
-func NewClient(cfg *config.HelmConfig, logger *slog.Logger) (*Client, error) {
+func NewClient(cfg *config.HelmConfig) (*Client, error) {
 	settings := cli.New()
 	settings.RepositoryCache = cfg.RepositoryCache
 	settings.RepositoryConfig = cfg.RepositoryConfig
@@ -55,8 +54,7 @@ func NewClient(cfg *config.HelmConfig, logger *slog.Logger) (*Client, error) {
 	return &Client{
 		cfg:         cfg,
 		settings:    settings,
-		logger:      logger,
-		retryPolicy: retry.DefaultHelmPolicy(logger),
+		retryPolicy: retry.DefaultHelmPolicy(),
 		getters:     getter.All(settings),
 	}, nil
 }
@@ -69,7 +67,7 @@ func (c *Client) actionConfig(namespace string) (*action.Configuration, error) {
 		namespace,
 		os.Getenv("HELM_DRIVER"), // defaults to "secrets"
 		func(format string, v ...interface{}) {
-			c.logger.Debug(fmt.Sprintf(format, v...))
+			slog.Debug(fmt.Sprintf(format, v...))
 		},
 	); err != nil {
 		return nil, fmt.Errorf("initializing helm action config for namespace %q: %w", namespace, err)
@@ -80,7 +78,7 @@ func (c *Client) actionConfig(namespace string) (*action.Configuration, error) {
 
 // Install installs a Helm chart using the SDK.
 func (c *Client) Install(ctx context.Context, req outbound.HelmInstallRequest) (*release.Release, error) {
-	c.logger.Info("helm install",
+	slog.Info("helm install",
 		slog.String("release", req.ReleaseName),
 		slog.String("chart", req.ChartName),
 		slog.String("namespace", req.Namespace),
@@ -123,7 +121,7 @@ func (c *Client) Install(ctx context.Context, req outbound.HelmInstallRequest) (
 		return nil, fmt.Errorf("helm install %q: %w", req.ReleaseName, err)
 	}
 
-	c.logger.Info("helm install succeeded",
+	slog.Info("helm install succeeded",
 		slog.String("release", rel.Name),
 		slog.Int("revision", rel.Version),
 	)
@@ -133,7 +131,7 @@ func (c *Client) Install(ctx context.Context, req outbound.HelmInstallRequest) (
 
 // Upgrade upgrades a Helm release using the SDK.
 func (c *Client) Upgrade(ctx context.Context, req outbound.HelmUpgradeRequest) (*release.Release, error) {
-	c.logger.Info("helm upgrade",
+	slog.Info("helm upgrade",
 		slog.String("release", req.ReleaseName),
 		slog.String("chart", req.ChartName),
 		slog.String("namespace", req.Namespace),
@@ -175,14 +173,14 @@ func (c *Client) Upgrade(ctx context.Context, req outbound.HelmUpgradeRequest) (
 		return nil, fmt.Errorf("helm upgrade %q: %w", req.ReleaseName, err)
 	}
 
-	c.logger.Info("helm upgrade succeeded", slog.String("release", rel.Name))
+	slog.Info("helm upgrade succeeded", slog.String("release", rel.Name))
 
 	return rel, nil
 }
 
 // Rollback rolls back a Helm release to a specific revision.
 func (c *Client) Rollback(ctx context.Context, req outbound.HelmRollbackRequest) error {
-	c.logger.Info("helm rollback",
+	slog.Info("helm rollback",
 		slog.String("release", req.ReleaseName),
 		slog.Int("version", req.Version),
 	)
@@ -208,7 +206,7 @@ func (c *Client) Rollback(ctx context.Context, req outbound.HelmRollbackRequest)
 
 // Uninstall removes a Helm release.
 func (c *Client) Uninstall(ctx context.Context, req outbound.HelmUninstallRequest) error {
-	c.logger.Info("helm uninstall", slog.String("release", req.ReleaseName))
+	slog.Info("helm uninstall", slog.String("release", req.ReleaseName))
 
 	actionCfg, err := c.actionConfig(req.Namespace)
 	if err != nil {
@@ -360,7 +358,7 @@ func (c *Client) ResolveVersion(ctx context.Context, chartName, repoURL, constra
 func (c *Client) BuildDependencies(ctx context.Context, chartName, repoURL, version string) error {
 	// Chart dependency management requires a chart path; we log a note here.
 	// Full dependency resolution is handled automatically by LocateChart.
-	c.logger.Info("dependency build: dependencies are resolved during chart load",
+	slog.Info("dependency build: dependencies are resolved during chart load",
 		slog.String("chart", chartName))
 
 	return nil
@@ -374,7 +372,7 @@ func (c *Client) loadChart(_ context.Context, name, repoURL, version string, opt
 	// Register the repo if needed
 	if repoURL != "" {
 		if err := c.ensureRepo(name, repoURL); err != nil {
-			c.logger.Warn("could not ensure repo", slog.String("url", repoURL), slog.String("error", err.Error()))
+			slog.Warn("could not ensure repo", slog.String("url", repoURL), slog.String("error", err.Error()))
 		}
 	}
 

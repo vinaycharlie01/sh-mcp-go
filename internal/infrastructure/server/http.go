@@ -21,7 +21,6 @@ import (
 type HTTPServer struct {
 	srv    *http.Server
 	router *chi.Mux
-	logger *slog.Logger
 	cfg    *config.ServerConfig
 }
 
@@ -31,12 +30,12 @@ type MetricsHandler interface {
 }
 
 // NewHTTPServer builds a fully configured HTTP server.
-func NewHTTPServer(cfg *config.ServerConfig, metrics MetricsHandler, logger *slog.Logger) *HTTPServer {
+func NewHTTPServer(cfg *config.ServerConfig, metrics MetricsHandler) *HTTPServer {
 	r := chi.NewRouter()
 
 	r.Use(middleware.RealIP)
 	r.Use(correlationIDMiddleware)
-	r.Use(requestLoggerMiddleware(logger))
+	r.Use(requestLoggerMiddleware)
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.Timeout(cfg.WriteTimeout))
 
@@ -63,7 +62,6 @@ func NewHTTPServer(cfg *config.ServerConfig, metrics MetricsHandler, logger *slo
 	return &HTTPServer{
 		srv:    srv,
 		router: r,
-		logger: logger,
 		cfg:    cfg,
 	}
 }
@@ -75,7 +73,7 @@ func (s *HTTPServer) Router() *chi.Mux { return s.router }
 func (s *HTTPServer) Start(ctx context.Context) error {
 	errCh := make(chan error, 1)
 	go func() {
-		s.logger.Info("HTTP server starting", slog.String("addr", s.srv.Addr))
+		slog.Info("HTTP server starting", slog.String("addr", s.srv.Addr))
 		if err := s.srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			errCh <- err
 		}
@@ -94,7 +92,7 @@ func (s *HTTPServer) Start(ctx context.Context) error {
 func (s *HTTPServer) shutdown(parentCtx context.Context) error {
 	ctx, cancel := context.WithTimeout(parentCtx, s.cfg.ShutdownTimeout)
 	defer cancel()
-	s.logger.Info("HTTP server shutting down")
+	slog.Info("HTTP server shutting down")
 
 	return s.srv.Shutdown(ctx)
 }
@@ -144,25 +142,22 @@ func correlationIDMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-func requestLoggerMiddleware(logger *slog.Logger) func(http.Handler) http.Handler {
-	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			start := time.Now()
-			ctx := r.Context()
-			ww := middleware.NewWrapResponseWriter(w, r.ProtoMajor)
+func requestLoggerMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		start := time.Now()
+		ctx := r.Context()
+		ww := middleware.NewWrapResponseWriter(w, r.ProtoMajor)
 
-			defer func() {
-				log := pkglogger.FromContext(ctx, logger)
-				log.Info("http request",
-					slog.String("method", r.Method),
-					slog.String("path", r.URL.Path),
-					slog.Int("status", ww.Status()),
-					slog.Duration("duration", time.Since(start)),
-					slog.String("remote_addr", r.RemoteAddr),
-				)
-			}()
+		defer func() {
+			pkglogger.FromContext(ctx, slog.Default()).Info("http request",
+				slog.String("method", r.Method),
+				slog.String("path", r.URL.Path),
+				slog.Int("status", ww.Status()),
+				slog.Duration("duration", time.Since(start)),
+				slog.String("remote_addr", r.RemoteAddr),
+			)
+		}()
 
-			next.ServeHTTP(ww, r)
-		})
-	}
+		next.ServeHTTP(ww, r)
+	})
 }

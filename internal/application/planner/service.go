@@ -45,19 +45,18 @@ type AppIntent struct {
 // Service is the AI deployment planner — it converts natural language intent
 // into an ordered, dependency-resolved deployment plan.
 type Service struct {
-	helm   outbound.HelmPort
-	k8s    outbound.KubernetesPort
-	logger *slog.Logger
+	helm outbound.HelmPort
+	k8s  outbound.KubernetesPort
 }
 
 // NewService creates a new deployment planner service.
-func NewService(helm outbound.HelmPort, k8s outbound.KubernetesPort, logger *slog.Logger) *Service {
-	return &Service{helm: helm, k8s: k8s, logger: logger}
+func NewService(helm outbound.HelmPort, k8s outbound.KubernetesPort) *Service {
+	return &Service{helm: helm, k8s: k8s}
 }
 
 // Plan generates a deployment plan from the given natural language intent.
 func (s *Service) Plan(ctx context.Context, intent string, namespace string) (*DeploymentPlan, error) {
-	s.logger.Info("generating deployment plan", slog.String("intent", intent))
+	slog.Info("generating deployment plan", slog.String("intent", intent))
 
 	parsed, err := s.parseIntent(intent, namespace)
 	if err != nil {

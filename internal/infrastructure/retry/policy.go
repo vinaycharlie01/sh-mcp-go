@@ -16,7 +16,6 @@ type Policy struct {
 	DelayType retry.DelayTypeFunc
 	RetryIf   retry.RetryIfFunc
 	OnRetry   retry.OnRetryFunc
-	Logger    *slog.Logger
 }
 
 const (
@@ -29,24 +28,22 @@ const (
 )
 
 // DefaultHelmPolicy is a sensible retry policy for Helm operations.
-func DefaultHelmPolicy(logger *slog.Logger) Policy {
+func DefaultHelmPolicy() Policy {
 	return Policy{
 		Attempts:  helmRetryAttempts,
 		Delay:     helmRetryDelay,
 		MaxDelay:  helmRetryMaxDelay,
 		DelayType: retry.BackOffDelay,
-		Logger:    logger,
 	}
 }
 
 // DefaultK8sPolicy is a sensible retry policy for Kubernetes API calls.
-func DefaultK8sPolicy(logger *slog.Logger) Policy {
+func DefaultK8sPolicy() Policy {
 	return Policy{
 		Attempts:  k8sRetryAttempts,
 		Delay:     k8sRetryDelay,
 		MaxDelay:  k8sRetryMaxDelay,
 		DelayType: retry.BackOffDelay,
-		Logger:    logger,
 	}
 }
 
@@ -71,10 +68,9 @@ func Do(ctx context.Context, policy Policy, fn func() error) error {
 
 	if policy.OnRetry != nil {
 		opts = append(opts, retry.OnRetry(policy.OnRetry))
-	} else if policy.Logger != nil {
-		logger := policy.Logger
+	} else {
 		opts = append(opts, retry.OnRetry(func(n uint, err error) {
-			logger.Warn("retrying operation",
+			slog.Warn("retrying operation",
 				slog.Uint64("attempt", uint64(n)),
 				slog.String("error", err.Error()),
 			)
