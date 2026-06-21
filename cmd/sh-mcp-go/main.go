@@ -46,7 +46,7 @@ func run() error {
 	}
 	defer app.Shutdown(context.Background())
 
-	app.Logger.Info("application ready",
+	slog.Info("application ready",
 		slog.String("mcp_transport", cfg.MCP.Transport),
 		slog.String("server_addr", fmt.Sprintf("%s:%d", cfg.Server.Host, cfg.Server.Port)),
 	)
@@ -75,7 +75,7 @@ func run() error {
 		return fmt.Errorf("runtime error: %w", err)
 	}
 
-	app.Logger.Info("sh-mcp-go stopped cleanly")
+	slog.Info("sh-mcp-go stopped cleanly")
 
 	return nil
 }

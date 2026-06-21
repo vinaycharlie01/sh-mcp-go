@@ -11,14 +11,13 @@ import (
 
 // Service provides cluster-level queries and validations.
 type Service struct {
-	k8s    outbound.KubernetesPort
-	helm   outbound.HelmPort
-	logger *slog.Logger
+	k8s  outbound.KubernetesPort
+	helm outbound.HelmPort
 }
 
 // NewService creates a new cluster service.
-func NewService(k8s outbound.KubernetesPort, helm outbound.HelmPort, logger *slog.Logger) *Service {
-	return &Service{k8s: k8s, helm: helm, logger: logger}
+func NewService(k8s outbound.KubernetesPort, helm outbound.HelmPort) *Service {
+	return &Service{k8s: k8s, helm: helm}
 }
 
 // GetInventory returns a full snapshot of the cluster state.
@@ -30,7 +29,7 @@ func (s *Service) GetInventory(ctx context.Context) (*cluster.ClusterInfo, error
 
 	releases, err := s.helm.ListReleases(ctx, "")
 	if err != nil {
-		s.logger.Warn("listing helm releases", slog.String("error", err.Error()))
+		slog.Warn("listing helm releases", slog.String("error", err.Error()))
 	} else {
 		for _, r := range releases {
 			appVer := ""

@@ -37,12 +37,11 @@ type Client struct {
 	discovery discovery.DiscoveryInterface
 	apiext    apiextclient.Interface
 	restCfg   *rest.Config
-	logger    *slog.Logger
 	cfg       *config.KubernetesConfig
 }
 
 // NewClient builds a Kubernetes client from the provided configuration.
-func NewClient(cfg *config.KubernetesConfig, logger *slog.Logger) (*Client, error) {
+func NewClient(cfg *config.KubernetesConfig) (*Client, error) {
 	restCfg, err := buildRESTConfig(cfg)
 	if err != nil {
 		return nil, fmt.Errorf("building REST config: %w", err)
@@ -80,7 +79,6 @@ func NewClient(cfg *config.KubernetesConfig, logger *slog.Logger) (*Client, erro
 		discovery: discClient,
 		apiext:    apiextClient,
 		restCfg:   restCfg,
-		logger:    logger,
 		cfg:       cfg,
 	}, nil
 }
@@ -97,14 +95,14 @@ func (c *Client) EnsureNamespace(ctx context.Context, spec outbound.NamespaceSpe
 
 	_, err := c.typed.CoreV1().Namespaces().Create(ctx, ns, metav1.CreateOptions{})
 	if apierrors.IsAlreadyExists(err) {
-		c.logger.Debug("namespace already exists", slog.String("namespace", spec.Name))
+		slog.Debug("namespace already exists", slog.String("namespace", spec.Name))
 
 		return nil
 	}
 	if err != nil {
 		return fmt.Errorf("creating namespace %q: %w", spec.Name, err)
 	}
-	c.logger.Info("namespace created", slog.String("namespace", spec.Name))
+	slog.Info("namespace created", slog.String("namespace", spec.Name))
 
 	return nil
 }
@@ -327,7 +325,7 @@ func (c *Client) WaitForRollout(ctx context.Context, kind, name, namespace strin
 			}
 			ready, err := c.isWorkloadReady(ctx, kind, name, namespace)
 			if err != nil {
-				c.logger.Warn("checking workload ready", slog.String("error", err.Error()))
+				slog.Warn("checking workload ready", slog.String("error", err.Error()))
 
 				continue
 			}
@@ -352,7 +350,7 @@ func (c *Client) ValidateCluster(ctx context.Context) (*cluster.ValidationResult
 
 		return result, nil
 	}
-	c.logger.Info("cluster reachable", slog.String("version", ver))
+	slog.Info("cluster reachable", slog.String("version", ver))
 
 	nodes, err := c.listNodes(ctx)
 	if err != nil {
