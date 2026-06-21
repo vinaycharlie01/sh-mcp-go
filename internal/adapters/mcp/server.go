@@ -20,7 +20,6 @@ type Server struct {
 	mcp     *server.MCPServer
 	handler *Handler
 	cfg     *config.MCPConfig
-	logger  *slog.Logger
 }
 
 // NewServer creates and configures the MCP server with all tools registered.
@@ -30,7 +29,6 @@ func NewServer(
 	clusterSvc *appcluster.Service,
 	plannerSvc *appplanner.Service,
 	helmPort outbound.HelmPort,
-	logger *slog.Logger,
 ) *Server {
 	s := server.NewMCPServer(
 		cfg.Name,
@@ -44,7 +42,6 @@ func NewServer(
 		clusterSvc:    clusterSvc,
 		plannerSvc:    plannerSvc,
 		helmPort:      helmPort,
-		logger:        logger,
 	}
 
 	registerTools(s, h)
@@ -53,13 +50,12 @@ func NewServer(
 		mcp:     s,
 		handler: h,
 		cfg:     cfg,
-		logger:  logger,
 	}
 }
 
 // ServeStdio runs the MCP server over stdin/stdout (standard MCP transport).
 func (s *Server) ServeStdio(_ context.Context) error {
-	s.logger.Info("starting MCP server (stdio transport)")
+	slog.Info("starting MCP server (stdio transport)")
 
 	return server.ServeStdio(s.mcp)
 }
@@ -70,7 +66,7 @@ func (s *Server) ServeSSE(_ context.Context) error {
 	if addr == "" {
 		addr = "0.0.0.0:8081"
 	}
-	s.logger.Info("starting MCP server (SSE transport)", slog.String("addr", addr))
+	slog.Info("starting MCP server (SSE transport)", slog.String("addr", addr))
 	sseServer := server.NewSSEServer(s.mcp, server.WithBaseURL(fmt.Sprintf("http://%s", addr)))
 
 	return sseServer.Start(addr)

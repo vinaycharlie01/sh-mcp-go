@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log/slog"
 
 	"github.com/mark3labs/mcp-go/mcp"
 
@@ -22,7 +21,6 @@ type Handler struct {
 	clusterSvc    *appcluster.Service
 	plannerSvc    *appplanner.Service
 	helmPort      outbound.HelmPort
-	logger        *slog.Logger
 }
 
 // --- Chart lifecycle handlers ---

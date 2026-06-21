@@ -74,7 +74,7 @@ func Build(ctx context.Context, cfg *config.Config) (*App, error) {
 	plannerSvc := appplanner.NewService(helmClient, k8sClient, logger)
 
 	// MCP server
-	mcpServer := mcpadapter.NewServer(&cfg.MCP, deploymentSvc, clusterSvc, plannerSvc, helmClient, logger)
+	mcpServer := mcpadapter.NewServer(&cfg.MCP, deploymentSvc, clusterSvc, plannerSvc, helmClient)
 
 	// HTTP server
 	httpServer := server.NewHTTPServer(&cfg.Server, metrics.Handler(), logger)
