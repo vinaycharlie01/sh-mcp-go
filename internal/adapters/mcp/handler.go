@@ -525,6 +525,197 @@ func (h *Handler) ReleaseStatus(ctx context.Context, req mcp.CallToolRequest) (*
 	return h.DeploymentStatus(ctx, req)
 }
 
+// --- Release inspection handlers ---
+
+func (h *Handler) GetReleaseValues(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	releaseName := mcp.ParseString(req, "release_name", "")
+	namespace := mcp.ParseString(req, "namespace", "default")
+	allValues := mcp.ParseBoolean(req, "all_values", false)
+
+	values, err := h.helmPort.GetReleaseValues(ctx, releaseName, namespace, allValues)
+	if err != nil {
+		return toolError(fmt.Sprintf("get_release_values failed: %v", err)), nil
+	}
+
+	return toolJSON(map[string]any{
+		"release_name": releaseName,
+		"namespace":    namespace,
+		"all_values":   allValues,
+		"values":       values,
+	})
+}
+
+func (h *Handler) GetReleaseNotes(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	releaseName := mcp.ParseString(req, "release_name", "")
+	namespace := mcp.ParseString(req, "namespace", "default")
+
+	notes, err := h.helmPort.GetReleaseNotes(ctx, releaseName, namespace)
+	if err != nil {
+		return toolError(fmt.Sprintf("get_release_notes failed: %v", err)), nil
+	}
+
+	return toolText(notes), nil
+}
+
+func (h *Handler) GetReleaseManifest(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	releaseName := mcp.ParseString(req, "release_name", "")
+	namespace := mcp.ParseString(req, "namespace", "default")
+
+	manifest, err := h.helmPort.GetReleaseManifest(ctx, releaseName, namespace)
+	if err != nil {
+		return toolError(fmt.Sprintf("get_release_manifest failed: %v", err)), nil
+	}
+
+	return toolText(manifest), nil
+}
+
+func (h *Handler) ShowChart(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	chartName := mcp.ParseString(req, "chart_name", "")
+	repoURL := mcp.ParseString(req, "repo_url", "")
+	version := mcp.ParseString(req, "version", "")
+
+	details, err := h.helmPort.ShowChart(ctx, chartName, repoURL, version)
+	if err != nil {
+		return toolError(fmt.Sprintf("show_chart failed: %v", err)), nil
+	}
+
+	return toolJSON(map[string]any{
+		"chart":          chartName,
+		"version":        version,
+		"metadata":       details.Metadata,
+		"default_values": details.DefaultValues,
+		"readme":         details.Readme,
+	})
+}
+
+// --- Repository management handlers ---
+
+func (h *Handler) RepoAdd(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	name := mcp.ParseString(req, "name", "")
+	url := mcp.ParseString(req, "url", "")
+	username := mcp.ParseString(req, "username", "")
+	password := mcp.ParseString(req, "password", "")
+	caFile := mcp.ParseString(req, "ca_file", "")
+	certFile := mcp.ParseString(req, "cert_file", "")
+	keyFile := mcp.ParseString(req, "key_file", "")
+	insecure := mcp.ParseBoolean(req, "insecure_skip_tls_verify", false)
+	passCreds := mcp.ParseBoolean(req, "pass_credentials_all", false)
+
+	if err := h.helmPort.AddRepo(ctx, outbound.RepoEntry{
+		Name:                  name,
+		URL:                   url,
+		Username:              username,
+		Password:              password,
+		CAFile:                caFile,
+		CertFile:              certFile,
+		KeyFile:               keyFile,
+		InsecureSkipTLSVerify: insecure,
+		PassCredentialsAll:    passCreds,
+	}); err != nil {
+		return toolError(fmt.Sprintf("repo_add failed: %v", err)), nil
+	}
+
+	return toolText(fmt.Sprintf("Repository %q added successfully", name)), nil
+}
+
+func (h *Handler) RepoRemove(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	name := mcp.ParseString(req, "name", "")
+
+	if err := h.helmPort.RemoveRepo(ctx, name); err != nil {
+		return toolError(fmt.Sprintf("repo_remove failed: %v", err)), nil
+	}
+
+	return toolText(fmt.Sprintf("Repository %q removed", name)), nil
+}
+
+func (h *Handler) RepoUpdate(ctx context.Context, _ mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	if err := h.helmPort.UpdateRepos(ctx); err != nil {
+		return toolError(fmt.Sprintf("repo_update failed: %v", err)), nil
+	}
+
+	return toolText("All repositories updated successfully"), nil
+}
+
+func (h *Handler) RepoList(ctx context.Context, _ mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	repos, err := h.helmPort.ListRepos(ctx)
+	if err != nil {
+		return toolError(fmt.Sprintf("repo_list failed: %v", err)), nil
+	}
+
+	items := make([]map[string]any, 0, len(repos))
+	for _, r := range repos {
+		items = append(items, map[string]any{
+			"name":     r.Name,
+			"url":      r.URL,
+			"has_tls":  r.CAFile != "" || r.CertFile != "" || r.KeyFile != "",
+			"has_auth": r.Username != "",
+		})
+	}
+
+	return toolJSON(map[string]any{"repositories": items, "count": len(items)})
+}
+
+func (h *Handler) RepoSearch(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	keyword := mcp.ParseString(req, "keyword", "")
+	repoURL := mcp.ParseString(req, "repo_url", "")
+
+	results, err := h.helmPort.SearchRepo(ctx, keyword, repoURL)
+	if err != nil {
+		return toolError(fmt.Sprintf("repo_search failed: %v", err)), nil
+	}
+
+	items := make([]map[string]any, 0, len(results))
+	for _, r := range results {
+		items = append(items, map[string]any{
+			"name":          r.Name,
+			"chart_version": r.ChartVersion,
+			"app_version":   r.AppVersion,
+			"description":   r.Description,
+			"repo_url":      r.RepoURL,
+		})
+	}
+
+	return toolJSON(map[string]any{"results": items, "count": len(items)})
+}
+
+// --- OCI registry handlers ---
+
+func (h *Handler) RegistryLogin(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	host := mcp.ParseString(req, "host", "")
+	username := mcp.ParseString(req, "username", "")
+	password := mcp.ParseString(req, "password", "")
+	caFile := mcp.ParseString(req, "ca_file", "")
+	certFile := mcp.ParseString(req, "cert_file", "")
+	keyFile := mcp.ParseString(req, "key_file", "")
+	insecure := mcp.ParseBoolean(req, "insecure_skip_tls_verify", false)
+	plainHTTP := mcp.ParseBoolean(req, "plain_http", false)
+
+	if err := h.helmPort.RegistryLogin(ctx, outbound.RegistryLoginRequest{
+		Host:                  host,
+		Username:              username,
+		Password:              password,
+		CAFile:                caFile,
+		CertFile:              certFile,
+		KeyFile:               keyFile,
+		InsecureSkipTLSVerify: insecure,
+		PlainHTTP:             plainHTTP,
+	}); err != nil {
+		return toolError(fmt.Sprintf("registry_login failed: %v", err)), nil
+	}
+
+	return toolText(fmt.Sprintf("Logged in to registry %q successfully", host)), nil
+}
+
+func (h *Handler) RegistryLogout(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	host := mcp.ParseString(req, "host", "")
+
+	if err := h.helmPort.RegistryLogout(ctx, host); err != nil {
+		return toolError(fmt.Sprintf("registry_logout failed: %v", err)), nil
+	}
+
+	return toolText(fmt.Sprintf("Logged out from registry %q", host)), nil
+}
+
 // --- Helpers ---
 
 func toolJSON(v any) (*mcp.CallToolResult, error) {
