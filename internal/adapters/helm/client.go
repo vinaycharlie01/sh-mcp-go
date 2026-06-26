@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"helm.sh/helm/v4/pkg/action"
-	chartv2 "helm.sh/helm/v4/pkg/chart/v2"
 	"helm.sh/helm/v4/pkg/chart/loader"
+	chartv2 "helm.sh/helm/v4/pkg/chart/v2"
 	"helm.sh/helm/v4/pkg/cli"
 	"helm.sh/helm/v4/pkg/getter"
 	"helm.sh/helm/v4/pkg/kube"
@@ -123,6 +123,7 @@ func (c *Client) Install(ctx context.Context, req outbound.HelmInstallRequest) (
 	err = retry.Do(ctx, c.retryPolicy, func() error {
 		var runErr error
 		rawRel, runErr = install.RunWithContext(ctx, chrt, req.Values)
+
 		return runErr
 	})
 	if err != nil {
@@ -190,6 +191,7 @@ func (c *Client) Upgrade(ctx context.Context, req outbound.HelmUpgradeRequest) (
 	err = retry.Do(ctx, c.retryPolicy, func() error {
 		var runErr error
 		rawRel, runErr = upgrade.RunWithContext(ctx, req.ReleaseName, chrt, req.Values)
+
 		return runErr
 	})
 	if err != nil {
