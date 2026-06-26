@@ -3,7 +3,7 @@ package outbound
 import (
 	"context"
 
-	"helm.sh/helm/v3/pkg/release"
+	releasev1 "helm.sh/helm/v4/pkg/release/v1"
 
 	"github.com/vinaycharlie01/sh-mcp-go/internal/domain/deployment"
 )
@@ -71,10 +71,10 @@ type HelmDiffResult struct {
 // Implementations must NOT call the helm CLI binary.
 type HelmPort interface {
 	// Install installs a Helm chart and returns the resulting release.
-	Install(ctx context.Context, req HelmInstallRequest) (*release.Release, error)
+	Install(ctx context.Context, req HelmInstallRequest) (*releasev1.Release, error)
 
 	// Upgrade upgrades an existing Helm release.
-	Upgrade(ctx context.Context, req HelmUpgradeRequest) (*release.Release, error)
+	Upgrade(ctx context.Context, req HelmUpgradeRequest) (*releasev1.Release, error)
 
 	// Rollback rolls back a Helm release to a specific revision.
 	Rollback(ctx context.Context, req HelmRollbackRequest) error
@@ -83,13 +83,13 @@ type HelmPort interface {
 	Uninstall(ctx context.Context, req HelmUninstallRequest) error
 
 	// GetRelease retrieves the current state of a Helm release.
-	GetRelease(ctx context.Context, releaseName, namespace string) (*release.Release, error)
+	GetRelease(ctx context.Context, releaseName, namespace string) (*releasev1.Release, error)
 
 	// ListReleases lists all Helm releases, optionally filtered by namespace.
-	ListReleases(ctx context.Context, namespace string) ([]*release.Release, error)
+	ListReleases(ctx context.Context, namespace string) ([]*releasev1.Release, error)
 
 	// GetHistory returns the revision history of a release.
-	GetHistory(ctx context.Context, releaseName, namespace string, maxRevisions int) ([]*release.Release, error)
+	GetHistory(ctx context.Context, releaseName, namespace string, maxRevisions int) ([]*releasev1.Release, error)
 
 	// DryRunInstall performs a dry-run install and returns the rendered manifests.
 	DryRunInstall(ctx context.Context, req HelmInstallRequest) (string, error)
@@ -113,8 +113,8 @@ type HelmPort interface {
 	BuildDependencies(ctx context.Context, chartName, repoURL, version string) error
 }
 
-// ReleaseMapper converts a helm release to our domain type.
-func ReleaseToChartRef(r *release.Release) deployment.ChartReference {
+// ReleaseToChartRef converts a helm release to our domain type.
+func ReleaseToChartRef(r *releasev1.Release) deployment.ChartReference {
 	ver := ""
 	if r.Chart != nil && r.Chart.Metadata != nil {
 		ver = r.Chart.Metadata.Version

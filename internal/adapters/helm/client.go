@@ -8,13 +8,14 @@ import (
 	"path/filepath"
 	"time"
 
-	"helm.sh/helm/v3/pkg/action"
-	"helm.sh/helm/v3/pkg/chart"
-	"helm.sh/helm/v3/pkg/chart/loader"
-	"helm.sh/helm/v3/pkg/cli"
-	"helm.sh/helm/v3/pkg/getter"
-	"helm.sh/helm/v3/pkg/release"
-	"helm.sh/helm/v3/pkg/repo"
+	"helm.sh/helm/v4/pkg/action"
+	chartv2 "helm.sh/helm/v4/pkg/chart/v2"
+	"helm.sh/helm/v4/pkg/chart/loader"
+	"helm.sh/helm/v4/pkg/cli"
+	"helm.sh/helm/v4/pkg/getter"
+	"helm.sh/helm/v4/pkg/kube"
+	releasev1 "helm.sh/helm/v4/pkg/release/v1"
+	repov1 "helm.sh/helm/v4/pkg/repo/v1"
 
 	"github.com/vinaycharlie01/sh-mcp-go/internal/infrastructure/config"
 	"github.com/vinaycharlie01/sh-mcp-go/internal/infrastructure/retry"
@@ -27,7 +28,7 @@ const (
 )
 
 // Client implements outbound.HelmPort using the Helm SDK.
-// No helm binary is invoked — all operations use the helm.sh/helm/v3 Go packages.
+// No helm binary is invoked — all operations use the helm.sh/helm/v4 Go packages.
 type Client struct {
 	cfg         *config.HelmConfig
 	settings    *cli.EnvSettings
@@ -61,14 +62,11 @@ func NewClient(cfg *config.HelmConfig) (*Client, error) {
 
 // actionConfig builds a Helm action.Configuration for a specific namespace.
 func (c *Client) actionConfig(namespace string) (*action.Configuration, error) {
-	actionCfg := new(action.Configuration)
+	actionCfg := action.NewConfiguration()
 	if err := actionCfg.Init(
 		c.settings.RESTClientGetter(),
 		namespace,
 		os.Getenv("HELM_DRIVER"), // defaults to "secrets"
-		func(format string, v ...interface{}) {
-			slog.Debug(fmt.Sprintf(format, v...))
-		},
 	); err != nil {
 		return nil, fmt.Errorf("initializing helm action config for namespace %q: %w", namespace, err)
 	}
@@ -77,7 +75,7 @@ func (c *Client) actionConfig(namespace string) (*action.Configuration, error) {
 }
 
 // Install installs a Helm chart using the SDK.
-func (c *Client) Install(ctx context.Context, req outbound.HelmInstallRequest) (*release.Release, error) {
+func (c *Client) Install(ctx context.Context, req outbound.HelmInstallRequest) (*releasev1.Release, error) {
 	slog.Info("helm install",
 		slog.String("release", req.ReleaseName),
 		slog.String("chart", req.ChartName),
@@ -94,11 +92,22 @@ func (c *Client) Install(ctx context.Context, req outbound.HelmInstallRequest) (
 	install.ReleaseName = req.ReleaseName
 	install.Namespace = req.Namespace
 	install.Version = req.Version
-	install.DryRun = req.DryRun
-	install.Wait = req.Wait
-	install.WaitForJobs = req.WaitForJobs
-	install.Atomic = req.Atomic
 	install.CreateNamespace = req.CreateNS
+	install.WaitForJobs = req.WaitForJobs
+	install.RollbackOnFailure = req.Atomic
+
+	if req.DryRun {
+		install.DryRunStrategy = action.DryRunClient
+	} else {
+		install.DryRunStrategy = action.DryRunNone
+	}
+
+	if req.Wait {
+		install.WaitStrategy = kube.StatusWatcherStrategy
+	} else {
+		install.WaitStrategy = kube.HookOnlyStrategy
+	}
+
 	if req.Timeout > 0 {
 		install.Timeout = time.Duration(req.Timeout) * time.Second
 	} else {
@@ -110,15 +119,19 @@ func (c *Client) Install(ctx context.Context, req outbound.HelmInstallRequest) (
 		return nil, fmt.Errorf("loading chart %q: %w", req.ChartName, err)
 	}
 
-	var rel *release.Release
+	var rawRel any
 	err = retry.Do(ctx, c.retryPolicy, func() error {
 		var runErr error
-		rel, runErr = install.RunWithContext(ctx, chrt, req.Values)
-
+		rawRel, runErr = install.RunWithContext(ctx, chrt, req.Values)
 		return runErr
 	})
 	if err != nil {
 		return nil, fmt.Errorf("helm install %q: %w", req.ReleaseName, err)
+	}
+
+	rel, ok := rawRel.(*releasev1.Release)
+	if !ok {
+		return nil, fmt.Errorf("helm install %q: unexpected release type", req.ReleaseName)
 	}
 
 	slog.Info("helm install succeeded",
@@ -130,7 +143,7 @@ func (c *Client) Install(ctx context.Context, req outbound.HelmInstallRequest) (
 }
 
 // Upgrade upgrades a Helm release using the SDK.
-func (c *Client) Upgrade(ctx context.Context, req outbound.HelmUpgradeRequest) (*release.Release, error) {
+func (c *Client) Upgrade(ctx context.Context, req outbound.HelmUpgradeRequest) (*releasev1.Release, error) {
 	slog.Info("helm upgrade",
 		slog.String("release", req.ReleaseName),
 		slog.String("chart", req.ChartName),
@@ -145,12 +158,23 @@ func (c *Client) Upgrade(ctx context.Context, req outbound.HelmUpgradeRequest) (
 	upgrade := action.NewUpgrade(actionCfg)
 	upgrade.Namespace = req.Namespace
 	upgrade.Version = req.Version
-	upgrade.DryRun = req.DryRun
-	upgrade.Wait = req.Wait
-	upgrade.Atomic = req.Atomic
 	upgrade.ReuseValues = req.ReuseValues
 	upgrade.ResetValues = req.ResetValues
-	upgrade.Force = req.Force
+	upgrade.ForceReplace = req.Force
+	upgrade.RollbackOnFailure = req.Atomic
+
+	if req.DryRun {
+		upgrade.DryRunStrategy = action.DryRunClient
+	} else {
+		upgrade.DryRunStrategy = action.DryRunNone
+	}
+
+	if req.Wait {
+		upgrade.WaitStrategy = kube.StatusWatcherStrategy
+	} else {
+		upgrade.WaitStrategy = kube.HookOnlyStrategy
+	}
+
 	if req.Timeout > 0 {
 		upgrade.Timeout = time.Duration(req.Timeout) * time.Second
 	} else {
@@ -162,15 +186,19 @@ func (c *Client) Upgrade(ctx context.Context, req outbound.HelmUpgradeRequest) (
 		return nil, fmt.Errorf("loading chart %q: %w", req.ChartName, err)
 	}
 
-	var rel *release.Release
+	var rawRel any
 	err = retry.Do(ctx, c.retryPolicy, func() error {
 		var runErr error
-		rel, runErr = upgrade.RunWithContext(ctx, req.ReleaseName, chrt, req.Values)
-
+		rawRel, runErr = upgrade.RunWithContext(ctx, req.ReleaseName, chrt, req.Values)
 		return runErr
 	})
 	if err != nil {
 		return nil, fmt.Errorf("helm upgrade %q: %w", req.ReleaseName, err)
+	}
+
+	rel, ok := rawRel.(*releasev1.Release)
+	if !ok {
+		return nil, fmt.Errorf("helm upgrade %q: unexpected release type", req.ReleaseName)
 	}
 
 	slog.Info("helm upgrade succeeded", slog.String("release", rel.Name))
@@ -192,9 +220,20 @@ func (c *Client) Rollback(ctx context.Context, req outbound.HelmRollbackRequest)
 
 	rollback := action.NewRollback(actionCfg)
 	rollback.Version = req.Version
-	rollback.DryRun = req.DryRun
-	rollback.Wait = req.Wait
-	rollback.Force = req.Force
+	rollback.ForceReplace = req.Force
+
+	if req.DryRun {
+		rollback.DryRunStrategy = action.DryRunClient
+	} else {
+		rollback.DryRunStrategy = action.DryRunNone
+	}
+
+	if req.Wait {
+		rollback.WaitStrategy = kube.StatusWatcherStrategy
+	} else {
+		rollback.WaitStrategy = kube.HookOnlyStrategy
+	}
+
 	if req.Timeout > 0 {
 		rollback.Timeout = time.Duration(req.Timeout) * time.Second
 	} else {
@@ -226,19 +265,28 @@ func (c *Client) Uninstall(ctx context.Context, req outbound.HelmUninstallReques
 }
 
 // GetRelease retrieves the current state of a Helm release.
-func (c *Client) GetRelease(ctx context.Context, releaseName, namespace string) (*release.Release, error) {
+func (c *Client) GetRelease(ctx context.Context, releaseName, namespace string) (*releasev1.Release, error) {
 	actionCfg, err := c.actionConfig(namespace)
 	if err != nil {
 		return nil, err
 	}
 
 	get := action.NewGet(actionCfg)
+	rawRel, err := get.Run(releaseName)
+	if err != nil {
+		return nil, err
+	}
 
-	return get.Run(releaseName)
+	rel, ok := rawRel.(*releasev1.Release)
+	if !ok {
+		return nil, fmt.Errorf("helm get %q: unexpected release type", releaseName)
+	}
+
+	return rel, nil
 }
 
 // ListReleases lists Helm releases in a namespace.
-func (c *Client) ListReleases(ctx context.Context, namespace string) ([]*release.Release, error) {
+func (c *Client) ListReleases(ctx context.Context, namespace string) ([]*releasev1.Release, error) {
 	actionCfg, err := c.actionConfig(namespace)
 	if err != nil {
 		return nil, err
@@ -248,11 +296,24 @@ func (c *Client) ListReleases(ctx context.Context, namespace string) ([]*release
 	list.AllNamespaces = namespace == ""
 	list.All = true
 
-	return list.Run()
+	rawRels, err := list.Run()
+	if err != nil {
+		return nil, err
+	}
+
+	releases := make([]*releasev1.Release, 0, len(rawRels))
+	for _, r := range rawRels {
+		rel, ok := r.(*releasev1.Release)
+		if ok {
+			releases = append(releases, rel)
+		}
+	}
+
+	return releases, nil
 }
 
 // GetHistory returns revision history for a release.
-func (c *Client) GetHistory(_ context.Context, releaseName, namespace string, maxRevisions int) ([]*release.Release, error) {
+func (c *Client) GetHistory(_ context.Context, releaseName, namespace string, maxRevisions int) ([]*releasev1.Release, error) {
 	actionCfg, err := c.actionConfig(namespace)
 	if err != nil {
 		return nil, err
@@ -261,7 +322,20 @@ func (c *Client) GetHistory(_ context.Context, releaseName, namespace string, ma
 	history := action.NewHistory(actionCfg)
 	history.Max = maxRevisions
 
-	return history.Run(releaseName)
+	rawRels, err := history.Run(releaseName)
+	if err != nil {
+		return nil, err
+	}
+
+	releases := make([]*releasev1.Release, 0, len(rawRels))
+	for _, r := range rawRels {
+		rel, ok := r.(*releasev1.Release)
+		if ok {
+			releases = append(releases, rel)
+		}
+	}
+
+	return releases, nil
 }
 
 // DryRunInstall performs a dry-run install and returns rendered manifests.
@@ -307,9 +381,14 @@ func (c *Client) Diff(ctx context.Context, req outbound.HelmUpgradeRequest) (*ou
 
 // ValidateChart validates chart structure and schema.
 func (c *Client) ValidateChart(ctx context.Context, chartName, repoURL, version string) error {
-	chrt, err := c.loadChart(ctx, chartName, repoURL, version, action.ChartPathOptions{})
+	raw, err := c.loadChart(ctx, chartName, repoURL, version, action.ChartPathOptions{})
 	if err != nil {
 		return fmt.Errorf("loading chart for validation: %w", err)
+	}
+
+	chrt, ok := raw.(*chartv2.Chart)
+	if !ok {
+		return fmt.Errorf("chart %q: unexpected chart type", chartName)
 	}
 
 	return chrt.Validate()
@@ -317,9 +396,14 @@ func (c *Client) ValidateChart(ctx context.Context, chartName, repoURL, version 
 
 // GenerateValues returns the default values for a chart.
 func (c *Client) GenerateValues(ctx context.Context, chartName, repoURL, version string) (map[string]any, error) {
-	chrt, err := c.loadChart(ctx, chartName, repoURL, version, action.ChartPathOptions{})
+	raw, err := c.loadChart(ctx, chartName, repoURL, version, action.ChartPathOptions{})
 	if err != nil {
 		return nil, err
+	}
+
+	chrt, ok := raw.(*chartv2.Chart)
+	if !ok {
+		return nil, fmt.Errorf("chart %q: unexpected chart type", chartName)
 	}
 
 	return chrt.Values, nil
@@ -356,8 +440,6 @@ func (c *Client) ResolveVersion(ctx context.Context, chartName, repoURL, constra
 
 // BuildDependencies downloads and builds chart dependencies.
 func (c *Client) BuildDependencies(ctx context.Context, chartName, repoURL, version string) error {
-	// Chart dependency management requires a chart path; we log a note here.
-	// Full dependency resolution is handled automatically by LocateChart.
 	slog.Info("dependency build: dependencies are resolved during chart load",
 		slog.String("chart", chartName))
 
@@ -365,11 +447,10 @@ func (c *Client) BuildDependencies(ctx context.Context, chartName, repoURL, vers
 }
 
 // loadChart downloads and loads a chart into memory.
-func (c *Client) loadChart(_ context.Context, name, repoURL, version string, opts action.ChartPathOptions) (*chart.Chart, error) {
+func (c *Client) loadChart(_ context.Context, name, repoURL, version string, opts action.ChartPathOptions) (any, error) {
 	opts.RepoURL = repoURL
 	opts.Version = version
 
-	// Register the repo if needed
 	if repoURL != "" {
 		if err := c.ensureRepo(name, repoURL); err != nil {
 			slog.Warn("could not ensure repo", slog.String("url", repoURL), slog.String("error", err.Error()))
@@ -386,17 +467,17 @@ func (c *Client) loadChart(_ context.Context, name, repoURL, version string, opt
 
 // ensureRepo adds a Helm repository entry if not already configured.
 func (c *Client) ensureRepo(name, url string) error {
-	f, err := repo.LoadFile(c.settings.RepositoryConfig)
+	f, err := repov1.LoadFile(c.settings.RepositoryConfig)
 	if err != nil {
-		f = repo.NewFile()
+		f = repov1.NewFile()
 	}
 
 	if f.Has(name) {
 		return nil
 	}
 
-	entry := &repo.Entry{Name: name, URL: url}
-	r, err := repo.NewChartRepository(entry, getter.All(c.settings))
+	entry := &repov1.Entry{Name: name, URL: url}
+	r, err := repov1.NewChartRepository(entry, getter.All(c.settings))
 	if err != nil {
 		return err
 	}
@@ -416,11 +497,11 @@ func (c *Client) updateRepoIndex(_ string) error {
 }
 
 // loadRepoIndex loads the repo index from cache.
-func (c *Client) loadRepoIndex(_ string) (*repo.IndexFile, error) {
+func (c *Client) loadRepoIndex(_ string) (*repov1.IndexFile, error) {
 	files, err := filepath.Glob(filepath.Join(c.settings.RepositoryCache, "*.yaml"))
 	if err != nil || len(files) == 0 {
 		return nil, fmt.Errorf("no repo index files found in cache")
 	}
 
-	return repo.LoadIndexFile(files[0])
+	return repov1.LoadIndexFile(files[0])
 }
