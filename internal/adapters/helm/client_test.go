@@ -128,10 +128,6 @@ func TestRemoveRepo_NotFound(t *testing.T) {
 func TestSearchRepo_MatchesByName(t *testing.T) {
 	c := newTestClient(t)
 
-	if err := os.MkdirAll(c.cfg.RepositoryCache, 0o755); err != nil {
-		t.Fatal(err)
-	}
-
 	idxContent := `apiVersion: v1
 entries:
   nginx:
@@ -146,7 +142,7 @@ entries:
       description: "Redis chart"
 generated: "2024-01-01T00:00:00Z"
 `
-	if err := os.WriteFile(filepath.Join(c.cfg.RepositoryCache, "test-index.yaml"), []byte(idxContent), 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(c.cfg.RepositoryCache, "test-index.yaml"), []byte(idxContent), 0o600); err != nil {
 		t.Fatal(err)
 	}
 
@@ -171,10 +167,6 @@ generated: "2024-01-01T00:00:00Z"
 func TestSearchRepo_EmptyKeyword_ReturnsAll(t *testing.T) {
 	c := newTestClient(t)
 
-	if err := os.MkdirAll(c.cfg.RepositoryCache, 0o755); err != nil {
-		t.Fatal(err)
-	}
-
 	idxContent := `apiVersion: v1
 entries:
   alpha:
@@ -185,7 +177,7 @@ entries:
       version: "1.0.0"
 generated: "2024-01-01T00:00:00Z"
 `
-	if err := os.WriteFile(filepath.Join(c.cfg.RepositoryCache, "all-index.yaml"), []byte(idxContent), 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(c.cfg.RepositoryCache, "all-index.yaml"), []byte(idxContent), 0o600); err != nil {
 		t.Fatal(err)
 	}
 
