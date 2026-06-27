@@ -48,7 +48,7 @@ func (s *Service) GetInventory(ctx context.Context) (*cluster.ClusterInfo, error
 				Chart:      chartName,
 				AppVersion: appVer,
 				Status:     status,
-				UpdatedAt:  r.Info.LastDeployed.Time,
+				UpdatedAt:  r.Info.LastDeployed,
 			})
 		}
 	}

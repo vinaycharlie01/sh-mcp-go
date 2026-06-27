@@ -111,7 +111,7 @@ Implementations of the ports.
 
 | Adapter | Port | Technology |
 |---------|------|------------|
-| `helm/` | `HelmPort` | `helm.sh/helm/v3` SDK (pure Go — no helm binary) |
+| `helm/` | `HelmPort` | `helm.sh/helm/v4` SDK (pure Go — no helm binary) |
 | `kubernetes/` | `K8sPort` | `k8s.io/client-go` (pure Go — no kubectl binary) |
 | `storage/sqlite/` | `Repository` | `modernc.org/sqlite` (pure Go — no CGo) |
 | `mcp/` | — | `github.com/mark3labs/mcp-go` MCP server |

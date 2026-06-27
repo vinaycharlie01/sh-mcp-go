@@ -44,11 +44,19 @@ type KubernetesConfig struct {
 type HelmConfig struct {
 	RepositoryCache  string        `mapstructure:"repository_cache"  validate:"required"`
 	RepositoryConfig string        `mapstructure:"repository_config" validate:"required"`
+	RegistryConfig   string        `mapstructure:"registry_config"`
 	PluginsDir       string        `mapstructure:"plugins_dir"`
 	DefaultTimeout   time.Duration `mapstructure:"default_timeout"`
 	MaxHistory       int           `mapstructure:"max_history"`
 	Atomic           bool          `mapstructure:"atomic"`
 	WaitForJobs      bool          `mapstructure:"wait_for_jobs"`
+	// TLS settings for Helm repository connections.
+	CAFile                string `mapstructure:"ca_file"`
+	CertFile              string `mapstructure:"cert_file"`
+	KeyFile               string `mapstructure:"key_file"`
+	InsecureSkipTLSVerify bool   `mapstructure:"insecure_skip_tls_verify"`
+	// OCI registry settings.
+	PlainHTTP bool `mapstructure:"plain_http"`
 }
 
 // StorageConfig controls the persistence backend.
