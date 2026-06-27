@@ -22,6 +22,21 @@ type HelmInstallRequest struct {
 	Timeout     int // seconds
 	Atomic      bool
 	CreateNS    bool
+	// Advanced fields
+	Labels                   map[string]string
+	Description              string
+	GenerateName             bool
+	NameTemplate             string
+	DisableHooks             bool
+	Replace                  bool
+	SkipCRDs                 bool
+	SubNotes                 bool
+	SkipSchemaValidation     bool
+	DisableOpenAPIValidation bool
+	ServerSideApply          bool
+	ForceConflicts           bool
+	TakeOwnership            bool
+	IncludeCRDs              bool
 }
 
 // HelmUpgradeRequest carries parameters for a chart upgrade.
@@ -39,6 +54,19 @@ type HelmUpgradeRequest struct {
 	ReuseValues bool
 	ResetValues bool
 	Force       bool
+	// Advanced fields
+	Labels                   map[string]string
+	Description              string
+	DisableHooks             bool
+	CleanupOnFail            bool
+	MaxHistory               int
+	RollbackOnFailure        bool
+	ResetThenReuseValues     bool
+	SkipSchemaValidation     bool
+	DisableOpenAPIValidation bool
+	ServerSideApply          string // "auto", "true", or "false"
+	ForceConflicts           bool
+	TakeOwnership            bool
 }
 
 // HelmRollbackRequest carries parameters for a chart rollback.
@@ -50,6 +78,12 @@ type HelmRollbackRequest struct {
 	Wait        bool
 	Timeout     int
 	Force       bool
+	// Advanced fields
+	DisableHooks    bool
+	CleanupOnFail   bool
+	MaxHistory      int
+	ServerSideApply string // "auto", "true", or "false"
+	ForceConflicts  bool
 }
 
 // HelmUninstallRequest carries parameters for an uninstall.
@@ -59,6 +93,10 @@ type HelmUninstallRequest struct {
 	DryRun      bool
 	KeepHistory bool
 	Timeout     int
+	// Advanced fields
+	Wait         bool
+	DisableHooks bool
+	Description  string
 }
 
 // HelmDiffResult contains the diff between current and desired release state.
@@ -106,6 +144,143 @@ type RegistryLoginRequest struct {
 	CAFile                string
 	InsecureSkipTLSVerify bool
 	PlainHTTP             bool
+}
+
+// LintMessage is a single message from a chart lint run.
+type LintMessage struct {
+	Severity string
+	Path     string
+	Message  string
+}
+
+// LintResult contains the results of linting one or more chart directories.
+type LintResult struct {
+	TotalCharts int
+	Messages    []*LintMessage
+	Errors      []string
+}
+
+// PackageRequest carries the parameters for packaging a chart directory.
+type PackageRequest struct {
+	ChartPath   string
+	Version     string
+	AppVersion  string
+	Destination string
+	Sign        bool
+	Key         string
+	Keyring     string
+}
+
+// PullRequest carries the parameters for pulling a chart from a repository.
+type PullRequest struct {
+	ChartRef              string
+	Version               string
+	RepoURL               string
+	DestDir               string
+	Untar                 bool
+	UntarDir              string
+	Username              string
+	Password              string
+	CertFile              string
+	KeyFile               string
+	CAFile                string
+	InsecureSkipTLSVerify bool
+	PassCredentialsAll    bool
+	PlainHTTP             bool
+}
+
+// PushRequest carries the parameters for pushing a chart to an OCI registry.
+type PushRequest struct {
+	ChartPath             string
+	Remote                string
+	CertFile              string
+	KeyFile               string
+	CAFile                string
+	InsecureSkipTLSVerify bool
+	PlainHTTP             bool
+}
+
+// TestResult contains the outcome of running helm test on a release.
+type TestResult struct {
+	ReleaseName string
+	Namespace   string
+	Status      string
+	Passed      int
+	Failed      int
+	Messages    []string
+}
+
+// ReleaseMetadata contains structured metadata for a deployed release.
+type ReleaseMetadata struct {
+	Name         string
+	Chart        string
+	Version      string
+	AppVersion   string
+	Annotations  map[string]string
+	Labels       map[string]string
+	Dependencies []string
+	Namespace    string
+	Revision     int
+	Status       string
+	DeployedAt   string
+	ApplyMethod  string
+}
+
+// ReleaseStatusDetails contains status and live resource information for a release.
+type ReleaseStatusDetails struct {
+	ReleaseName string
+	Namespace   string
+	Revision    int
+	Status      string
+	Notes       string
+	DeployedAt  string
+	Resources   map[string]any
+}
+
+// HookInfo describes a single lifecycle hook attached to a release.
+type HookInfo struct {
+	Name   string
+	Kind   string
+	Path   string
+	Events []string
+	Status string
+	Weight int
+}
+
+// DependencyEntry describes a chart dependency declared in Chart.yaml.
+type DependencyEntry struct {
+	Name       string
+	Version    string
+	Repository string
+	Condition  string
+	Tags       []string
+	Alias      string
+}
+
+// TemplateRequest carries the parameters for rendering chart templates locally.
+type TemplateRequest struct {
+	ReleaseName          string
+	Namespace            string
+	ChartName            string
+	RepoURL              string
+	Version              string
+	Values               map[string]any
+	ShowNotes            bool
+	IncludeCRDs          bool
+	SkipSchemaValidation bool
+}
+
+// HelmListRequest carries the parameters for listing releases with filtering and sorting.
+type HelmListRequest struct {
+	Namespace     string
+	AllNamespaces bool
+	Filter        string
+	Selector      string
+	StateMask     string // "deployed", "failed", "uninstalled", "all", etc.
+	Limit         int
+	Offset        int
+	SortBy        string // "date" or "" (name)
+	SortReverse   bool
 }
 
 // HelmPort is the outbound port for all Helm SDK interactions.
@@ -186,6 +361,54 @@ type HelmPort interface {
 
 	// RegistryLogout removes stored credentials for an OCI registry.
 	RegistryLogout(ctx context.Context, host string) error
+
+	// LintChart lints local chart directories and returns lint messages and errors.
+	LintChart(ctx context.Context, paths []string, values map[string]any) (*LintResult, error)
+
+	// PackageChart packages a chart directory into a versioned .tgz archive.
+	PackageChart(ctx context.Context, req PackageRequest) (string, error)
+
+	// PullChart downloads a chart from a repository or OCI registry to a local directory.
+	PullChart(ctx context.Context, req PullRequest) (string, error)
+
+	// PushChart pushes a local chart archive to an OCI registry.
+	PushChart(ctx context.Context, req PushRequest) (string, error)
+
+	// TestRelease runs the test hooks for a deployed release and returns the results.
+	TestRelease(ctx context.Context, releaseName, namespace string, timeout int, filters []string) (*TestResult, error)
+
+	// GetReleaseMetadata returns structured release metadata including labels, annotations and dependencies.
+	GetReleaseMetadata(ctx context.Context, releaseName, namespace string, version int) (*ReleaseMetadata, error)
+
+	// GetReleaseStatusWithResources returns release status with live Kubernetes resource details.
+	GetReleaseStatusWithResources(ctx context.Context, releaseName, namespace string, version int) (*ReleaseStatusDetails, error)
+
+	// GetReleaseHooks returns the lifecycle hook definitions for a deployed release.
+	GetReleaseHooks(ctx context.Context, releaseName, namespace string) ([]*HookInfo, error)
+
+	// ShowChartValues returns the default values declared in a chart's values.yaml.
+	ShowChartValues(ctx context.Context, chartName, repoURL, version string) (map[string]any, error)
+
+	// ShowChartReadme returns the README content for a chart.
+	ShowChartReadme(ctx context.Context, chartName, repoURL, version string) (string, error)
+
+	// ShowChartCRDs returns the CRD manifests bundled with a chart.
+	ShowChartCRDs(ctx context.Context, chartName, repoURL, version string) ([]string, error)
+
+	// TemplateChart renders chart templates locally without connecting to Kubernetes.
+	TemplateChart(ctx context.Context, req TemplateRequest) (string, error)
+
+	// ListChartDependencies returns the dependency list declared in a chart's Chart.yaml.
+	ListChartDependencies(ctx context.Context, chartName, repoURL, version string) ([]*DependencyEntry, error)
+
+	// UpdateRepo refreshes the index for a single named repository.
+	UpdateRepo(ctx context.Context, name string) error
+
+	// ListReleasesFiltered lists releases with advanced filter, sort and pagination options.
+	ListReleasesFiltered(ctx context.Context, req HelmListRequest) ([]*releasev1.Release, error)
+
+	// GetReleaseRevision retrieves a specific historical revision of a release.
+	GetReleaseRevision(ctx context.Context, releaseName, namespace string, version int) (*releasev1.Release, error)
 }
 
 // ReleaseToChartRef converts a helm release to our domain type.

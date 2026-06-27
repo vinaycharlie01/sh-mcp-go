@@ -4,8 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/mark3labs/mcp-go/mcp"
+	releasev1 "helm.sh/helm/v4/pkg/release/v1"
 
 	appcluster "github.com/vinaycharlie01/sh-mcp-go/internal/application/cluster"
 	appdeployment "github.com/vinaycharlie01/sh-mcp-go/internal/application/deployment"
@@ -716,6 +718,451 @@ func (h *Handler) RegistryLogout(ctx context.Context, req mcp.CallToolRequest) (
 	return toolText(fmt.Sprintf("Logged out from registry %q", host)), nil
 }
 
+// --- Enhanced lifecycle handlers ---
+
+func (h *Handler) HelmInstall(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	releaseName := mcp.ParseString(req, "release_name", "")
+	chartName := mcp.ParseString(req, "chart_name", "")
+	repoURL := mcp.ParseString(req, "repo_url", "")
+	namespace := mcp.ParseString(req, "namespace", "default")
+	version := mcp.ParseString(req, "version", "")
+	timeout := int(mcp.ParseFloat64(req, "timeout_seconds", defaultTimeoutSeconds))
+
+	var values map[string]any
+	if v, ok := req.GetArguments()["values"]; ok && v != nil {
+		if m, ok := v.(map[string]any); ok {
+			values = m
+		}
+	}
+
+	rel, err := h.helmPort.Install(ctx, outbound.HelmInstallRequest{
+		ReleaseName:              releaseName,
+		Namespace:                namespace,
+		ChartName:                chartName,
+		RepoURL:                  repoURL,
+		Version:                  version,
+		Values:                   values,
+		DryRun:                   mcp.ParseBoolean(req, "dry_run", false),
+		Wait:                     mcp.ParseBoolean(req, "wait", true),
+		WaitForJobs:              mcp.ParseBoolean(req, "wait_for_jobs", false),
+		Atomic:                   mcp.ParseBoolean(req, "atomic", false),
+		CreateNS:                 mcp.ParseBoolean(req, "create_namespace", true),
+		Timeout:                  timeout,
+		Description:              mcp.ParseString(req, "description", ""),
+		GenerateName:             mcp.ParseBoolean(req, "generate_name", false),
+		NameTemplate:             mcp.ParseString(req, "name_template", ""),
+		DisableHooks:             mcp.ParseBoolean(req, "disable_hooks", false),
+		Replace:                  mcp.ParseBoolean(req, "replace", false),
+		SkipCRDs:                 mcp.ParseBoolean(req, "skip_crds", false),
+		IncludeCRDs:              mcp.ParseBoolean(req, "include_crds", false),
+		SubNotes:                 mcp.ParseBoolean(req, "sub_notes", false),
+		SkipSchemaValidation:     mcp.ParseBoolean(req, "skip_schema_validation", false),
+		DisableOpenAPIValidation: mcp.ParseBoolean(req, "disable_openapi_validation", false),
+		ServerSideApply:          mcp.ParseBoolean(req, "server_side_apply", true),
+		ForceConflicts:           mcp.ParseBoolean(req, "force_conflicts", false),
+		TakeOwnership:            mcp.ParseBoolean(req, "take_ownership", false),
+	})
+	if err != nil {
+		return toolError(fmt.Sprintf("helm_install failed: %v", err)), nil
+	}
+
+	return toolJSON(releaseToMap(rel))
+}
+
+func (h *Handler) HelmUpgrade(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	releaseName := mcp.ParseString(req, "release_name", "")
+	chartName := mcp.ParseString(req, "chart_name", "")
+	repoURL := mcp.ParseString(req, "repo_url", "")
+	namespace := mcp.ParseString(req, "namespace", "default")
+	version := mcp.ParseString(req, "version", "")
+	timeout := int(mcp.ParseFloat64(req, "timeout_seconds", defaultTimeoutSeconds))
+
+	var values map[string]any
+	if v, ok := req.GetArguments()["values"]; ok && v != nil {
+		if m, ok := v.(map[string]any); ok {
+			values = m
+		}
+	}
+
+	rel, err := h.helmPort.Upgrade(ctx, outbound.HelmUpgradeRequest{
+		ReleaseName:              releaseName,
+		Namespace:                namespace,
+		ChartName:                chartName,
+		RepoURL:                  repoURL,
+		Version:                  version,
+		Values:                   values,
+		DryRun:                   mcp.ParseBoolean(req, "dry_run", false),
+		Wait:                     mcp.ParseBoolean(req, "wait", true),
+		Atomic:                   mcp.ParseBoolean(req, "atomic", false),
+		ReuseValues:              mcp.ParseBoolean(req, "reuse_values", false),
+		ResetValues:              mcp.ParseBoolean(req, "reset_values", false),
+		ResetThenReuseValues:     mcp.ParseBoolean(req, "reset_then_reuse_values", false),
+		Timeout:                  timeout,
+		MaxHistory:               int(mcp.ParseFloat64(req, "max_history", 0)),
+		Description:              mcp.ParseString(req, "description", ""),
+		DisableHooks:             mcp.ParseBoolean(req, "disable_hooks", false),
+		CleanupOnFail:            mcp.ParseBoolean(req, "cleanup_on_fail", false),
+		RollbackOnFailure:        mcp.ParseBoolean(req, "rollback_on_failure", false),
+		SkipSchemaValidation:     mcp.ParseBoolean(req, "skip_schema_validation", false),
+		DisableOpenAPIValidation: mcp.ParseBoolean(req, "disable_openapi_validation", false),
+		ServerSideApply:          mcp.ParseString(req, "server_side_apply", ""),
+		ForceConflicts:           mcp.ParseBoolean(req, "force_conflicts", false),
+		TakeOwnership:            mcp.ParseBoolean(req, "take_ownership", false),
+	})
+	if err != nil {
+		return toolError(fmt.Sprintf("helm_upgrade failed: %v", err)), nil
+	}
+
+	return toolJSON(releaseToMap(rel))
+}
+
+func (h *Handler) HelmRollback(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	releaseName := mcp.ParseString(req, "release_name", "")
+	namespace := mcp.ParseString(req, "namespace", "default")
+	version := int(mcp.ParseFloat64(req, "version", 0))
+	timeout := int(mcp.ParseFloat64(req, "timeout_seconds", defaultTimeoutSeconds))
+
+	if err := h.helmPort.Rollback(ctx, outbound.HelmRollbackRequest{
+		ReleaseName:     releaseName,
+		Namespace:       namespace,
+		Version:         version,
+		DryRun:          mcp.ParseBoolean(req, "dry_run", false),
+		Wait:            mcp.ParseBoolean(req, "wait", true),
+		Timeout:         timeout,
+		DisableHooks:    mcp.ParseBoolean(req, "disable_hooks", false),
+		CleanupOnFail:   mcp.ParseBoolean(req, "cleanup_on_fail", false),
+		MaxHistory:      int(mcp.ParseFloat64(req, "max_history", 0)),
+		ServerSideApply: mcp.ParseString(req, "server_side_apply", ""),
+		ForceConflicts:  mcp.ParseBoolean(req, "force_conflicts", false),
+	}); err != nil {
+		return toolError(fmt.Sprintf("helm_rollback failed: %v", err)), nil
+	}
+
+	return toolText(fmt.Sprintf("Release %q rolled back to revision %d successfully", releaseName, version)), nil
+}
+
+func (h *Handler) HelmUninstall(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	releaseName := mcp.ParseString(req, "release_name", "")
+	namespace := mcp.ParseString(req, "namespace", "default")
+	timeout := int(mcp.ParseFloat64(req, "timeout_seconds", defaultTimeoutSeconds))
+
+	if err := h.helmPort.Uninstall(ctx, outbound.HelmUninstallRequest{
+		ReleaseName:  releaseName,
+		Namespace:    namespace,
+		DryRun:       mcp.ParseBoolean(req, "dry_run", false),
+		KeepHistory:  mcp.ParseBoolean(req, "keep_history", false),
+		Wait:         mcp.ParseBoolean(req, "wait", false),
+		DisableHooks: mcp.ParseBoolean(req, "disable_hooks", false),
+		Timeout:      timeout,
+		Description:  mcp.ParseString(req, "description", ""),
+	}); err != nil {
+		return toolError(fmt.Sprintf("helm_uninstall failed: %v", err)), nil
+	}
+
+	return toolText(fmt.Sprintf("Release %q uninstalled successfully", releaseName)), nil
+}
+
+// --- Extended release inspection handlers ---
+
+func (h *Handler) GetReleaseMetadata(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	releaseName := mcp.ParseString(req, "release_name", "")
+	namespace := mcp.ParseString(req, "namespace", "default")
+	version := int(mcp.ParseFloat64(req, "version", 0))
+
+	meta, err := h.helmPort.GetReleaseMetadata(ctx, releaseName, namespace, version)
+	if err != nil {
+		return toolError(fmt.Sprintf("get_release_metadata failed: %v", err)), nil
+	}
+
+	return toolJSON(meta)
+}
+
+func (h *Handler) GetReleaseStatusResources(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	releaseName := mcp.ParseString(req, "release_name", "")
+	namespace := mcp.ParseString(req, "namespace", "default")
+	version := int(mcp.ParseFloat64(req, "version", 0))
+
+	details, err := h.helmPort.GetReleaseStatusWithResources(ctx, releaseName, namespace, version)
+	if err != nil {
+		return toolError(fmt.Sprintf("get_release_status_resources failed: %v", err)), nil
+	}
+
+	return toolJSON(details)
+}
+
+func (h *Handler) GetReleaseHooks(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	releaseName := mcp.ParseString(req, "release_name", "")
+	namespace := mcp.ParseString(req, "namespace", "default")
+
+	hooks, err := h.helmPort.GetReleaseHooks(ctx, releaseName, namespace)
+	if err != nil {
+		return toolError(fmt.Sprintf("get_release_hooks failed: %v", err)), nil
+	}
+
+	return toolJSON(map[string]any{
+		"release_name": releaseName,
+		"namespace":    namespace,
+		"hooks":        hooks,
+		"count":        len(hooks),
+	})
+}
+
+func (h *Handler) GetReleaseRevision(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	releaseName := mcp.ParseString(req, "release_name", "")
+	namespace := mcp.ParseString(req, "namespace", "default")
+	version := int(mcp.ParseFloat64(req, "version", 0))
+
+	rel, err := h.helmPort.GetReleaseRevision(ctx, releaseName, namespace, version)
+	if err != nil {
+		return toolError(fmt.Sprintf("get_release_revision failed: %v", err)), nil
+	}
+
+	return toolJSON(releaseToMap(rel))
+}
+
+func (h *Handler) ListReleasesFiltered(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	releases, err := h.helmPort.ListReleasesFiltered(ctx, outbound.HelmListRequest{
+		Namespace:     mcp.ParseString(req, "namespace", ""),
+		AllNamespaces: mcp.ParseBoolean(req, "all_namespaces", false),
+		Filter:        mcp.ParseString(req, "filter", ""),
+		Selector:      mcp.ParseString(req, "selector", ""),
+		StateMask:     mcp.ParseString(req, "state_mask", "all"),
+		Limit:         int(mcp.ParseFloat64(req, "limit", 0)),
+		Offset:        int(mcp.ParseFloat64(req, "offset", 0)),
+		SortBy:        mcp.ParseString(req, "sort_by", ""),
+		SortReverse:   mcp.ParseBoolean(req, "sort_reverse", false),
+	})
+	if err != nil {
+		return toolError(fmt.Sprintf("list_releases_filtered failed: %v", err)), nil
+	}
+
+	items := make([]map[string]any, 0, len(releases))
+	for _, r := range releases {
+		items = append(items, releaseToMap(r))
+	}
+
+	return toolJSON(map[string]any{"releases": items, "count": len(items)})
+}
+
+// --- Chart inspection handlers ---
+
+func (h *Handler) ShowChartValues(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	chartName := mcp.ParseString(req, "chart_name", "")
+	repoURL := mcp.ParseString(req, "repo_url", "")
+	version := mcp.ParseString(req, "version", "")
+
+	values, err := h.helmPort.ShowChartValues(ctx, chartName, repoURL, version)
+	if err != nil {
+		return toolError(fmt.Sprintf("show_chart_values failed: %v", err)), nil
+	}
+
+	return toolJSON(map[string]any{
+		"chart":   chartName,
+		"version": version,
+		"values":  values,
+	})
+}
+
+func (h *Handler) ShowChartReadme(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	chartName := mcp.ParseString(req, "chart_name", "")
+	repoURL := mcp.ParseString(req, "repo_url", "")
+	version := mcp.ParseString(req, "version", "")
+
+	readme, err := h.helmPort.ShowChartReadme(ctx, chartName, repoURL, version)
+	if err != nil {
+		return toolError(fmt.Sprintf("show_chart_readme failed: %v", err)), nil
+	}
+
+	return toolText(readme), nil
+}
+
+func (h *Handler) ShowChartCRDs(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	chartName := mcp.ParseString(req, "chart_name", "")
+	repoURL := mcp.ParseString(req, "repo_url", "")
+	version := mcp.ParseString(req, "version", "")
+
+	crds, err := h.helmPort.ShowChartCRDs(ctx, chartName, repoURL, version)
+	if err != nil {
+		return toolError(fmt.Sprintf("show_chart_crds failed: %v", err)), nil
+	}
+
+	return toolJSON(map[string]any{
+		"chart":   chartName,
+		"version": version,
+		"crds":    crds,
+		"count":   len(crds),
+	})
+}
+
+func (h *Handler) ListChartDependencies(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	chartName := mcp.ParseString(req, "chart_name", "")
+	repoURL := mcp.ParseString(req, "repo_url", "")
+	version := mcp.ParseString(req, "version", "")
+
+	deps, err := h.helmPort.ListChartDependencies(ctx, chartName, repoURL, version)
+	if err != nil {
+		return toolError(fmt.Sprintf("list_chart_dependencies failed: %v", err)), nil
+	}
+
+	return toolJSON(map[string]any{
+		"chart":        chartName,
+		"version":      version,
+		"dependencies": deps,
+		"count":        len(deps),
+	})
+}
+
+func (h *Handler) TemplateChart(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	var values map[string]any
+	if v, ok := req.GetArguments()["values"]; ok && v != nil {
+		if m, ok := v.(map[string]any); ok {
+			values = m
+		}
+	}
+
+	manifest, err := h.helmPort.TemplateChart(ctx, outbound.TemplateRequest{
+		ReleaseName:          mcp.ParseString(req, "release_name", ""),
+		Namespace:            mcp.ParseString(req, "namespace", "default"),
+		ChartName:            mcp.ParseString(req, "chart_name", ""),
+		RepoURL:              mcp.ParseString(req, "repo_url", ""),
+		Version:              mcp.ParseString(req, "version", ""),
+		Values:               values,
+		ShowNotes:            mcp.ParseBoolean(req, "show_notes", false),
+		IncludeCRDs:          mcp.ParseBoolean(req, "include_crds", false),
+		SkipSchemaValidation: mcp.ParseBoolean(req, "skip_schema_validation", false),
+	})
+	if err != nil {
+		return toolError(fmt.Sprintf("template_chart failed: %v", err)), nil
+	}
+
+	return toolText(manifest), nil
+}
+
+func (h *Handler) LintChart(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	chartPathStr := mcp.ParseString(req, "chart_path", "")
+
+	paths := []string{}
+	for _, p := range strings.Split(chartPathStr, ",") {
+		p = strings.TrimSpace(p)
+		if p != "" {
+			paths = append(paths, p)
+		}
+	}
+
+	if len(paths) == 0 {
+		return toolError("chart_path is required"), nil
+	}
+
+	var values map[string]any
+	if v, ok := req.GetArguments()["values"]; ok && v != nil {
+		if m, ok := v.(map[string]any); ok {
+			values = m
+		}
+	}
+
+	result, err := h.helmPort.LintChart(ctx, paths, values)
+	if err != nil {
+		return toolError(fmt.Sprintf("lint_chart failed: %v", err)), nil
+	}
+
+	return toolJSON(result)
+}
+
+// --- Chart distribution handlers ---
+
+func (h *Handler) PackageChart(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	archivePath, err := h.helmPort.PackageChart(ctx, outbound.PackageRequest{
+		ChartPath:   mcp.ParseString(req, "chart_path", ""),
+		Version:     mcp.ParseString(req, "version", ""),
+		AppVersion:  mcp.ParseString(req, "app_version", ""),
+		Destination: mcp.ParseString(req, "destination", "."),
+		Sign:        mcp.ParseBoolean(req, "sign", false),
+		Key:         mcp.ParseString(req, "key", ""),
+		Keyring:     mcp.ParseString(req, "keyring", ""),
+	})
+	if err != nil {
+		return toolError(fmt.Sprintf("package_chart failed: %v", err)), nil
+	}
+
+	return toolText(fmt.Sprintf("Chart packaged successfully: %s", archivePath)), nil
+}
+
+func (h *Handler) PullChart(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	output, err := h.helmPort.PullChart(ctx, outbound.PullRequest{
+		ChartRef:              mcp.ParseString(req, "chart_ref", ""),
+		Version:               mcp.ParseString(req, "version", ""),
+		RepoURL:               mcp.ParseString(req, "repo_url", ""),
+		DestDir:               mcp.ParseString(req, "dest_dir", ""),
+		Untar:                 mcp.ParseBoolean(req, "untar", false),
+		UntarDir:              mcp.ParseString(req, "untar_dir", ""),
+		Username:              mcp.ParseString(req, "username", ""),
+		Password:              mcp.ParseString(req, "password", ""),
+		CAFile:                mcp.ParseString(req, "ca_file", ""),
+		CertFile:              mcp.ParseString(req, "cert_file", ""),
+		KeyFile:               mcp.ParseString(req, "key_file", ""),
+		InsecureSkipTLSVerify: mcp.ParseBoolean(req, "insecure_skip_tls_verify", false),
+		PassCredentialsAll:    mcp.ParseBoolean(req, "pass_credentials_all", false),
+		PlainHTTP:             mcp.ParseBoolean(req, "plain_http", false),
+	})
+	if err != nil {
+		return toolError(fmt.Sprintf("pull_chart failed: %v", err)), nil
+	}
+
+	return toolText(output), nil
+}
+
+func (h *Handler) PushChart(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	output, err := h.helmPort.PushChart(ctx, outbound.PushRequest{
+		ChartPath:             mcp.ParseString(req, "chart_path", ""),
+		Remote:                mcp.ParseString(req, "remote", ""),
+		CAFile:                mcp.ParseString(req, "ca_file", ""),
+		CertFile:              mcp.ParseString(req, "cert_file", ""),
+		KeyFile:               mcp.ParseString(req, "key_file", ""),
+		InsecureSkipTLSVerify: mcp.ParseBoolean(req, "insecure_skip_tls_verify", false),
+		PlainHTTP:             mcp.ParseBoolean(req, "plain_http", false),
+	})
+	if err != nil {
+		return toolError(fmt.Sprintf("push_chart failed: %v", err)), nil
+	}
+
+	return toolText(output), nil
+}
+
+func (h *Handler) TestRelease(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	releaseName := mcp.ParseString(req, "release_name", "")
+	namespace := mcp.ParseString(req, "namespace", "default")
+	timeout := int(mcp.ParseFloat64(req, "timeout_seconds", defaultTimeoutSeconds))
+
+	var filters []string
+	if f := mcp.ParseString(req, "filter", ""); f != "" {
+		for _, name := range strings.Split(f, ",") {
+			name = strings.TrimSpace(name)
+			if name != "" {
+				filters = append(filters, name)
+			}
+		}
+	}
+
+	result, err := h.helmPort.TestRelease(ctx, releaseName, namespace, timeout, filters)
+	if err != nil {
+		return toolError(fmt.Sprintf("test_release failed: %v", err)), nil
+	}
+
+	return toolJSON(result)
+}
+
+// --- Repository management handlers (additional) ---
+
+func (h *Handler) RepoUpdateSingle(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	name := mcp.ParseString(req, "name", "")
+
+	if err := h.helmPort.UpdateRepo(ctx, name); err != nil {
+		return toolError(fmt.Sprintf("repo_update_single failed: %v", err)), nil
+	}
+
+	return toolText(fmt.Sprintf("Repository %q updated successfully", name)), nil
+}
+
 // --- Helpers ---
 
 func toolJSON(v any) (*mcp.CallToolResult, error) {
@@ -750,4 +1197,41 @@ func extractDeps(values map[string]any) []string {
 	}
 
 	return deps
+}
+
+// releaseToMap converts a Helm release to a JSON-friendly map for tool responses.
+func releaseToMap(r *releasev1.Release) map[string]any {
+	if r == nil {
+		return nil
+	}
+
+	chartName := ""
+	chartVersion := ""
+	appVersion := ""
+	if r.Chart != nil && r.Chart.Metadata != nil {
+		chartName = r.Chart.Metadata.Name
+		chartVersion = r.Chart.Metadata.Version
+		appVersion = r.Chart.Metadata.AppVersion
+	}
+
+	status := ""
+	deployedAt := ""
+	notes := ""
+	if r.Info != nil {
+		status = string(r.Info.Status)
+		deployedAt = r.Info.LastDeployed.String()
+		notes = r.Info.Notes
+	}
+
+	return map[string]any{
+		"name":          r.Name,
+		"namespace":     r.Namespace,
+		"revision":      r.Version,
+		"status":        status,
+		"chart":         chartName,
+		"chart_version": chartVersion,
+		"app_version":   appVersion,
+		"deployed_at":   deployedAt,
+		"notes":         notes,
+	}
 }
