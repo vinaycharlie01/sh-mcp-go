@@ -847,6 +847,33 @@ func (c *Client) PushChart(_ context.Context, req outbound.PushRequest) (string,
 	return push.Run(req.ChartPath, req.Remote)
 }
 
+// collectTestHookResults tallies passed/failed hook counts and appends status messages.
+func collectTestHookResults(hooks []*releasev1.Hook) (passed, failed int, messages []string) {
+	for _, hook := range hooks {
+		isTest := false
+		for _, event := range hook.Events {
+			if event == releasev1.HookTest {
+				isTest = true
+
+				break
+			}
+		}
+		if !isTest {
+			continue
+		}
+		messages = append(messages, fmt.Sprintf("%s: %s", hook.Name, string(hook.LastRun.Phase)))
+		switch hook.LastRun.Phase {
+		case releasev1.HookPhaseSucceeded:
+			passed++
+		case releasev1.HookPhaseFailed:
+			failed++
+		case releasev1.HookPhaseUnknown, releasev1.HookPhaseRunning:
+		}
+	}
+
+	return passed, failed, messages
+}
+
 // TestRelease runs the test hooks for a deployed release and returns the results.
 func (c *Client) TestRelease(
 	ctx context.Context, releaseName, namespace string, timeout int, filters []string,
@@ -878,37 +905,14 @@ func (c *Client) TestRelease(
 	result := &outbound.TestResult{
 		ReleaseName: releaseName,
 		Namespace:   namespace,
+		Status:      "passed",
 	}
 
-	rel, ok := rawRel.(*releasev1.Release)
-	if ok && rel != nil {
-		for _, hook := range rel.Hooks {
-			isTest := false
-			for _, event := range hook.Events {
-				if event == releasev1.HookTest {
-					isTest = true
-
-					break
-				}
-			}
-			if !isTest {
-				continue
-			}
-			phase := string(hook.LastRun.Phase)
-			result.Messages = append(result.Messages, fmt.Sprintf("%s: %s", hook.Name, phase))
-			switch hook.LastRun.Phase {
-			case releasev1.HookPhaseSucceeded:
-				result.Passed++
-			case releasev1.HookPhaseFailed:
-				result.Failed++
-			case releasev1.HookPhaseUnknown, releasev1.HookPhaseRunning:
-			}
-		}
+	if rel, ok := rawRel.(*releasev1.Release); ok && rel != nil {
+		result.Passed, result.Failed, result.Messages = collectTestHookResults(rel.Hooks)
 	}
 
-	if result.Failed == 0 {
-		result.Status = "passed"
-	} else {
+	if result.Failed > 0 {
 		result.Status = "failed"
 	}
 
