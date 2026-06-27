@@ -485,7 +485,7 @@ func toolRegistryLogout() mcp.Tool {
 
 func toolHelmInstall() mcp.Tool {
 	return mcp.NewTool("helm_install",
-		mcp.WithDescription("Install a Helm chart with full Helm v4 parameter support including server-side apply, ownership takeover, hooks control, and CRD management."),
+		mcp.WithDescription("Install a Helm chart with full v4 support: server-side apply, ownership takeover, hooks control, CRD management."),
 		mcp.WithString("release_name", mcp.Required(), mcp.Description("Helm release name")),
 		mcp.WithString("chart_name", mcp.Required(), mcp.Description("Chart name or OCI reference")),
 		mcp.WithString("repo_url", mcp.Description("Helm repository URL")),
@@ -516,7 +516,7 @@ func toolHelmInstall() mcp.Tool {
 
 func toolHelmUpgrade() mcp.Tool {
 	return mcp.NewTool("helm_upgrade",
-		mcp.WithDescription("Upgrade a Helm release with full Helm v4 parameter support including history limits, cleanup policies, and server-side apply options."),
+		mcp.WithDescription("Upgrade a Helm release with full v4 support: history limits, cleanup policies, and server-side apply."),
 		mcp.WithString("release_name", mcp.Required(), mcp.Description("Release name")),
 		mcp.WithString("chart_name", mcp.Required(), mcp.Description("Chart name")),
 		mcp.WithString("repo_url", mcp.Description("Helm repository URL")),
@@ -545,7 +545,7 @@ func toolHelmUpgrade() mcp.Tool {
 
 func toolHelmRollback() mcp.Tool {
 	return mcp.NewTool("helm_rollback",
-		mcp.WithDescription("Roll back a Helm release with full Helm v4 parameter support including hooks control, cleanup policies, and server-side apply options."),
+		mcp.WithDescription("Roll back a Helm release with full v4 support: hooks control, cleanup policies, and server-side apply."),
 		mcp.WithString("release_name", mcp.Required(), mcp.Description("Release name")),
 		mcp.WithString("namespace", mcp.Required(), mcp.Description("Release namespace")),
 		mcp.WithNumber("version", mcp.Description("Target revision (0 = previous)")),
@@ -578,7 +578,7 @@ func toolHelmUninstall() mcp.Tool {
 
 func toolGetReleaseMetadata() mcp.Tool {
 	return mcp.NewTool("get_release_metadata",
-		mcp.WithDescription("Return structured metadata for a Helm release including chart info, labels, annotations, dependencies, apply method, and deployment timestamps."),
+		mcp.WithDescription("Return structured metadata for a Helm release: chart info, labels, annotations, dependencies, and apply method."),
 		mcp.WithString("release_name", mcp.Required(), mcp.Description("Release name")),
 		mcp.WithString("namespace", mcp.Required(), mcp.Description("Release namespace")),
 		mcp.WithNumber("version", mcp.Description("Revision number (0 = current)")),
@@ -596,7 +596,7 @@ func toolGetReleaseStatusResources() mcp.Tool {
 
 func toolGetReleaseHooks() mcp.Tool {
 	return mcp.NewTool("get_release_hooks",
-		mcp.WithDescription("List the lifecycle hooks (pre-install, post-install, test, etc.) for a deployed Helm release, including their last execution status."),
+		mcp.WithDescription("List lifecycle hooks for a deployed Helm release, including their last execution status."),
 		mcp.WithString("release_name", mcp.Required(), mcp.Description("Release name")),
 		mcp.WithString("namespace", mcp.Required(), mcp.Description("Release namespace")),
 	)
@@ -604,7 +604,7 @@ func toolGetReleaseHooks() mcp.Tool {
 
 func toolGetReleaseRevision() mcp.Tool {
 	return mcp.NewTool("get_release_revision",
-		mcp.WithDescription("Retrieve a specific historical revision of a Helm release, including the manifest and values used at that point in time."),
+		mcp.WithDescription("Retrieve a specific historical revision of a Helm release, including the manifest and values."),
 		mcp.WithString("release_name", mcp.Required(), mcp.Description("Release name")),
 		mcp.WithString("namespace", mcp.Required(), mcp.Description("Release namespace")),
 		mcp.WithNumber("version", mcp.Required(), mcp.Description("Revision number to retrieve")),
@@ -657,7 +657,7 @@ func toolShowChartCRDs() mcp.Tool {
 
 func toolListChartDependencies() mcp.Tool {
 	return mcp.NewTool("list_chart_dependencies",
-		mcp.WithDescription("List the chart dependencies declared in a chart's Chart.yaml, including version constraints, repositories, conditions and tags."),
+		mcp.WithDescription("List the chart dependencies declared in Chart.yaml: versions, repositories, conditions and tags."),
 		mcp.WithString("chart_name", mcp.Required(), mcp.Description("Chart name")),
 		mcp.WithString("repo_url", mcp.Required(), mcp.Description("Helm repository URL")),
 		mcp.WithString("version", mcp.Description("Chart version (omit for latest)")),
@@ -681,7 +681,7 @@ func toolTemplateChart() mcp.Tool {
 
 func toolLintChart() mcp.Tool {
 	return mcp.NewTool("lint_chart",
-		mcp.WithDescription("Lint one or more local Helm chart directories for correctness, checking templates, values schema, metadata, and best practices."),
+		mcp.WithDescription("Lint local Helm chart directories, checking templates, values schema, metadata, and best practices."),
 		mcp.WithString("chart_path", mcp.Required(), mcp.Description("Path to the local chart directory (or comma-separated list of paths)")),
 		mcp.WithObject("values", mcp.Description("Values overrides to use during linting")),
 		mcp.WithBoolean("strict", mcp.Description("Fail on warnings as well as errors")),

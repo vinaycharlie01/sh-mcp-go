@@ -848,7 +848,9 @@ func (c *Client) PushChart(_ context.Context, req outbound.PushRequest) (string,
 }
 
 // TestRelease runs the test hooks for a deployed release and returns the results.
-func (c *Client) TestRelease(ctx context.Context, releaseName, namespace string, timeout int, filters []string) (*outbound.TestResult, error) {
+func (c *Client) TestRelease(
+	ctx context.Context, releaseName, namespace string, timeout int, filters []string,
+) (*outbound.TestResult, error) {
 	actionCfg, err := c.actionConfig(namespace)
 	if err != nil {
 		return nil, err
@@ -867,7 +869,7 @@ func (c *Client) TestRelease(ctx context.Context, releaseName, namespace string,
 
 	rawRel, shutdownFn, err := testAction.Run(releaseName)
 	if shutdownFn != nil {
-		defer shutdownFn()
+		defer func() { _ = shutdownFn() }()
 	}
 	if err != nil {
 		return nil, fmt.Errorf("helm test %q: %w", releaseName, err)
@@ -885,6 +887,7 @@ func (c *Client) TestRelease(ctx context.Context, releaseName, namespace string,
 			for _, event := range hook.Events {
 				if event == releasev1.HookTest {
 					isTest = true
+
 					break
 				}
 			}
@@ -898,6 +901,7 @@ func (c *Client) TestRelease(ctx context.Context, releaseName, namespace string,
 				result.Passed++
 			case releasev1.HookPhaseFailed:
 				result.Failed++
+			case releasev1.HookPhaseUnknown, releasev1.HookPhaseRunning:
 			}
 		}
 	}
@@ -953,7 +957,9 @@ func (c *Client) GetReleaseMetadata(_ context.Context, releaseName, namespace st
 }
 
 // GetReleaseStatusWithResources returns release status with live Kubernetes resource details.
-func (c *Client) GetReleaseStatusWithResources(_ context.Context, releaseName, namespace string, version int) (*outbound.ReleaseStatusDetails, error) {
+func (c *Client) GetReleaseStatusWithResources(
+	_ context.Context, releaseName, namespace string, version int,
+) (*outbound.ReleaseStatusDetails, error) {
 	actionCfg, err := c.actionConfig(namespace)
 	if err != nil {
 		return nil, err
@@ -1169,6 +1175,7 @@ func (c *Client) UpdateRepo(_ context.Context, name string) error {
 			if _, dlErr := r.DownloadIndexFile(); dlErr != nil {
 				return fmt.Errorf("updating repo %q: %w", name, dlErr)
 			}
+
 			return nil
 		}
 	}
