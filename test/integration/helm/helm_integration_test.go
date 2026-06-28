@@ -1,6 +1,6 @@
 //go:build integration
 
-package helm_test
+package helmintegration_test
 
 import (
 	"context"
@@ -18,9 +18,8 @@ import (
 
 // suite holds shared state for all integration tests in this file.
 var suite struct {
-	client     *helmadapter.Client
-	chartPath  string // absolute path to testdata/charts/hello
-	kubecfgTmp string // temp kubeconfig written from k3s container
+	client    *helmadapter.Client
+	chartPath string // absolute path to testdata/charts/hello
 }
 
 // TestMain spins up a k3s testcontainer once for the whole integration suite,
@@ -29,14 +28,14 @@ func TestMain(m *testing.M) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 	defer cancel()
 
-	// ── 1. Start k3s ──────────────────────────────────────────────────────────
+	// ── 1. Start k3s via testcontainers ──────────────────────────────────────
 	k3sContainer, err := k3s.Run(ctx, "rancher/k3s:v1.31.4-k3s1")
 	if err != nil {
 		panic("k3s.Run: " + err.Error())
 	}
 	defer func() { _ = k3sContainer.Terminate(context.Background()) }()
 
-	// ── 2. Write kubeconfig to a temp file ────────────────────────────────────
+	// ── 2. Write kubeconfig to a temp file ───────────────────────────────────
 	kubeconfig, err := k3sContainer.GetKubeConfig(ctx)
 	if err != nil {
 		panic("GetKubeConfig: " + err.Error())
@@ -50,11 +49,9 @@ func TestMain(m *testing.M) {
 		panic("write kubeconfig: " + err.Error())
 	}
 	kubecfgFile.Close()
-	suite.kubecfgTmp = kubecfgFile.Name()
-	defer os.Remove(suite.kubecfgTmp)
+	defer os.Remove(kubecfgFile.Name())
 
-	// The Helm CLI settings pick up KUBECONFIG from the environment.
-	os.Setenv("KUBECONFIG", suite.kubecfgTmp)
+	os.Setenv("KUBECONFIG", kubecfgFile.Name())
 
 	// ── 3. Create Helm client ─────────────────────────────────────────────────
 	dir, err := os.MkdirTemp("", "helm-integration-*")
@@ -74,7 +71,6 @@ func TestMain(m *testing.M) {
 	}
 
 	// ── 4. Resolve testdata chart path ────────────────────────────────────────
-	// __FILE__ is in internal/adapters/helm — testdata lives next to it.
 	wd, err := os.Getwd()
 	if err != nil {
 		panic("os.Getwd: " + err.Error())
@@ -113,8 +109,6 @@ func installHello(t *testing.T, releaseName string) {
 
 // ─── tests ────────────────────────────────────────────────────────────────────
 
-// TestIntegration_Install verifies that a chart can be installed and then
-// queried via GetRelease, and that the release status is "deployed".
 func TestIntegration_Install(t *testing.T) {
 	ctx := context.Background()
 	const name = "hello-install"
@@ -133,7 +127,6 @@ func TestIntegration_Install(t *testing.T) {
 	}
 }
 
-// TestIntegration_ListReleases verifies that installed releases appear in the list.
 func TestIntegration_ListReleases(t *testing.T) {
 	ctx := context.Background()
 	const name = "hello-list"
@@ -158,8 +151,6 @@ func TestIntegration_ListReleases(t *testing.T) {
 	}
 }
 
-// TestIntegration_Upgrade verifies that an installed release can be upgraded
-// (bumping a value) and the new revision is reflected.
 func TestIntegration_Upgrade(t *testing.T) {
 	ctx := context.Background()
 	const name = "hello-upgrade"
@@ -182,15 +173,12 @@ func TestIntegration_Upgrade(t *testing.T) {
 	}
 }
 
-// TestIntegration_Rollback verifies that a release can be rolled back to
-// revision 1 after an upgrade.
 func TestIntegration_Rollback(t *testing.T) {
 	ctx := context.Background()
 	const name = "hello-rollback"
 
 	installHello(t, name)
 
-	// Upgrade to create revision 2.
 	if _, err := suite.client.Upgrade(ctx, outbound.HelmUpgradeRequest{
 		ReleaseName: name,
 		Namespace:   "default",
@@ -201,7 +189,6 @@ func TestIntegration_Rollback(t *testing.T) {
 		t.Fatalf("Upgrade (pre-rollback): %v", err)
 	}
 
-	// Roll back to revision 1.
 	if err := suite.client.Rollback(ctx, outbound.HelmRollbackRequest{
 		ReleaseName: name,
 		Namespace:   "default",
@@ -221,8 +208,6 @@ func TestIntegration_Rollback(t *testing.T) {
 	}
 }
 
-// TestIntegration_GetReleaseValues verifies that user-supplied values
-// are retrievable after install.
 func TestIntegration_GetReleaseValues(t *testing.T) {
 	ctx := context.Background()
 	const name = "hello-values"
@@ -254,14 +239,12 @@ func TestIntegration_GetReleaseValues(t *testing.T) {
 	}
 }
 
-// TestIntegration_GetHistory verifies that revision history is recorded.
 func TestIntegration_GetHistory(t *testing.T) {
 	ctx := context.Background()
 	const name = "hello-history"
 
 	installHello(t, name)
 
-	// Create a second revision.
 	if _, err := suite.client.Upgrade(ctx, outbound.HelmUpgradeRequest{
 		ReleaseName: name,
 		Namespace:   "default",
@@ -281,8 +264,6 @@ func TestIntegration_GetHistory(t *testing.T) {
 	}
 }
 
-// TestIntegration_GetReleaseManifest verifies that the rendered manifest
-// is non-empty after install.
 func TestIntegration_GetReleaseManifest(t *testing.T) {
 	ctx := context.Background()
 	const name = "hello-manifest"
@@ -298,8 +279,6 @@ func TestIntegration_GetReleaseManifest(t *testing.T) {
 	}
 }
 
-// TestIntegration_TemplateChart verifies that chart templates can be rendered
-// locally without a cluster connection.
 func TestIntegration_TemplateChart(t *testing.T) {
 	ctx := context.Background()
 
@@ -316,22 +295,18 @@ func TestIntegration_TemplateChart(t *testing.T) {
 	}
 }
 
-// TestIntegration_ShowChartValues verifies that default chart values are returned.
 func TestIntegration_ShowChartValues(t *testing.T) {
 	ctx := context.Background()
 
-	// hello chart has no values.yaml so result should be an empty map, not an error.
 	vals, err := suite.client.ShowChartValues(ctx, suite.chartPath, "", "")
 	if err != nil {
 		t.Fatalf("ShowChartValues: %v", err)
 	}
-	// We expect a non-nil map (even if empty).
 	if vals == nil {
 		t.Error("ShowChartValues returned nil map")
 	}
 }
 
-// TestIntegration_LintChart verifies that the test chart passes linting.
 func TestIntegration_LintChart(t *testing.T) {
 	ctx := context.Background()
 
@@ -344,13 +319,10 @@ func TestIntegration_LintChart(t *testing.T) {
 	}
 }
 
-// TestIntegration_Uninstall verifies that a release can be removed and
-// subsequently cannot be retrieved.
 func TestIntegration_Uninstall(t *testing.T) {
 	ctx := context.Background()
 	const name = "hello-uninstall"
 
-	// Install without the cleanup helper so we can uninstall manually.
 	if _, err := suite.client.Install(ctx, outbound.HelmInstallRequest{
 		ReleaseName: name,
 		Namespace:   "default",
@@ -368,7 +340,6 @@ func TestIntegration_Uninstall(t *testing.T) {
 		t.Fatalf("Uninstall: %v", err)
 	}
 
-	// GetRelease should now return an error (release not found).
 	if _, err := suite.client.GetRelease(ctx, name, "default"); err == nil {
 		t.Error("expected error after uninstall, got nil")
 	}
