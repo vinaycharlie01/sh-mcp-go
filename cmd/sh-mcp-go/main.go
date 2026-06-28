@@ -24,6 +24,9 @@ func main() {
 }
 
 func run() error {
+
+
+	
 	// Bootstrap logger early for startup errors.
 	startupLogger := pkglogger.New(slog.LevelInfo)
 	startupLogger.Info("starting sh-mcp-go", slog.String("version", version.Get().String()))
