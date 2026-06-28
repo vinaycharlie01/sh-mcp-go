@@ -54,3 +54,13 @@ lint:
 vet:
   packages:
     - ./...
+
+integration:
+  packages:
+    - ./internal/adapters/helm/...
+  args:
+    - "-tags"
+    - "integration"
+    - "-v"
+    - "-timeout"
+    - "10m"

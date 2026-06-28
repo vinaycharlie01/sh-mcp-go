@@ -17,7 +17,6 @@ import (
 	"os"
 
 	"github.com/magefile/mage/mg"
-	"github.com/magefile/mage/sh"
 	dockermagex "github.com/nirantaraai/nava/mage/docker"
 	gomagex "github.com/nirantaraai/nava/mage/golang"
 	goreleasermagex "github.com/nirantaraai/nava/mage/goreleaser"
@@ -59,16 +58,9 @@ func Bench() error { return gomagex.Bench() }
 // Govulncheck runs govulncheck for vulnerability scanning (config: go.yaml → govulncheck).
 func Govulncheck() error { return gomagex.Govulncheck() }
 
-// IntegrationTest runs the Helm integration test suite against a live k3s testcontainer.
-// Requires Docker to be available on the host.
-func IntegrationTest() error {
-	return sh.RunV("go", "test",
-		"-tags", "integration",
-		"-v",
-		"-timeout", "10m",
-		"./internal/adapters/helm/...",
-	)
-}
+// Integration runs the Helm integration test suite against a live k3s testcontainer.
+// Requires Docker to be available on the host (config: go.yaml → integration).
+func Integration() error { return gomagex.Integration() }
 
 // BuildLinux cross-compiles for linux/amd64 and linux/arm64 (config: go.yaml → crossBuild).
 func BuildLinux() error { return gomagex.CrossBuild() }

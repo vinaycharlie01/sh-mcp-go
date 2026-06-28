@@ -97,7 +97,7 @@ jobs:
         if: steps.cache-mage.outputs.cache-hit != 'true'
         run: go install github.com/magefile/mage@${{ env.MAGE_VERSION }}
       - name: Integration Test (k3s via testcontainers)
-        run: mage integrationTest
+        run: mage integration
 
   coverage:
     name: Coverage
