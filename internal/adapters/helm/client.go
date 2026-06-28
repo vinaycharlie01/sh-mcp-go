@@ -321,6 +321,8 @@ func (c *Client) Uninstall(ctx context.Context, req outbound.HelmUninstallReques
 	}
 	if req.Wait {
 		uninstall.WaitStrategy = kube.StatusWatcherStrategy
+	} else {
+		uninstall.WaitStrategy = kube.HookOnlyStrategy
 	}
 
 	_, err = uninstall.Run(req.ReleaseName)
@@ -1041,6 +1043,10 @@ func (c *Client) ShowChartValues(ctx context.Context, chartName, repoURL, versio
 	chrt, ok := raw.(*chartv2.Chart)
 	if !ok {
 		return nil, fmt.Errorf("chart %q: unexpected chart type", chartName)
+	}
+
+	if chrt.Values == nil {
+		return map[string]any{}, nil
 	}
 
 	return chrt.Values, nil
